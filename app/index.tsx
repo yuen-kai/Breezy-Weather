@@ -15,6 +15,7 @@ import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
+import convertToScale from "@/convertToScale";
 
 const HomeScreen = () => {
 	const [location, setLocation] = useState("New York");
@@ -34,6 +35,40 @@ const HomeScreen = () => {
 		unit === "imperial"
 			? weather?.current.feelslike_f
 			: weather?.current.feelslike_c;
+
+	interface InfoRowProps {
+		label: string;
+		value: number;
+		type: string;
+		imperialUnit: string;
+		metricUnit: string;
+		numBoxes: number;
+	}
+
+	const InfoRow: React.FC<InfoRowProps> = ({
+		label,
+		value,
+		type,
+		imperialUnit,
+		metricUnit,
+		numBoxes,
+	}) => {
+		return (
+			<View style={styles.infoRow}>
+				<Text variant="bodyLarge" style={{ flex: 2.2 }}>
+					{label}:
+				</Text>
+				<BoxRow
+					containerStyle={{ flex: 3.2 }}
+					numBoxes={numBoxes}
+					selectedBox={convertToScale(Math.round(value), type, unit)}
+				/>
+				<Text variant="bodyLarge" style={{ flex: 1.3 }}>
+					{Math.round(value)} {unit === "imperial" ? imperialUnit : metricUnit}
+				</Text>
+			</View>
+		);
+	};
 
 	return (
 		<View style={styles.container}>
@@ -77,42 +112,52 @@ const HomeScreen = () => {
 					<Card style={styles.currentWeatherCard}>
 						<Card.Content>
 							<View style={styles.currentWeatherRow}>
-								<Image
+								{/* <Image
 									source={{ uri: `https:${weather.current.condition.icon}` }}
 									style={styles.currentWeatherIcon}
 									resizeMode="contain"
+								/> */}
+								<InfoRow
+									label="Overall"
+									value={feelsLike}
+									type="temp"
+									imperialUnit="°F"
+									metricUnit="°C"
+									numBoxes={5}
 								/>
-								<Text variant="displayMedium" style={styles.currentTemp}>
+								{/* <Text variant="displayMedium" style={styles.currentTemp}>
 									{Math.round(feelsLike)}° {unit === "imperial" ? "F" : "C"}
-								</Text>
+								</Text> */}
 							</View>
 							<Text variant="titleMedium" style={styles.conditionText}>
 								{weather.current.condition.text}
 							</Text>
 
 							<Divider style={styles.divider} />
-							<View style={styles.infoRow}>
-								<Text variant="bodyLarge">Temperature:</Text>
-              <BoxRow numBoxes={5} selectedBox={3} />
-
-								{/* <Text variant="bodyLarge">
-									{Math.round(currentTemp)}° {unit === "imperial" ? "F" : "C"}
-								</Text> */}
-							</View>
-							<View style={styles.infoRow}>
-								<Text variant="bodyLarge">Wind:</Text>
-								<Text variant="bodyLarge">
-									{windSpeed} {unit === "imperial" ? "mph" : "kph"}
-								</Text>
-							</View>
-							<View style={styles.infoRow}>
-								<Text variant="bodyLarge">Humidity:</Text>
-								<Text variant="bodyLarge">{humidity}%</Text>
-							</View>
-							<View style={styles.infoRow}>
-								<Text variant="bodyLarge">UV Index:</Text>
-								<Text variant="bodyLarge">{uvIndex}</Text>
-							</View>
+							<InfoRow
+								label="Temperature"
+								value={currentTemp}
+								type="temp"
+								imperialUnit="°F"
+								metricUnit="°C"
+								numBoxes={5}
+							/>
+							<InfoRow
+								label="Wind"
+								value={windSpeed}
+								type="wind"
+								imperialUnit="mph"
+								metricUnit="kph"
+								numBoxes={3}
+							/>
+							<InfoRow
+								label="Humidity"
+								value={humidity}
+								type="humidity"
+								imperialUnit="%"
+								metricUnit="%"
+								numBoxes={3}
+							/>
 						</Card.Content>
 					</Card>
 
@@ -185,6 +230,7 @@ const styles = StyleSheet.create({
 	currentWeatherRow: {
 		flexDirection: "row",
 		alignItems: "center",
+		// paddingRight: 30,
 	},
 	currentWeatherIcon: {
 		width: 60,

@@ -5,11 +5,12 @@ import { Card } from "react-native-paper";
 interface BoxRowProps {
 	numBoxes: number;
     selectedBox: number;
+    containerStyle?: object;
 }
 
-const BoxRow: React.FC<BoxRowProps> = ({ numBoxes, selectedBox }) => {
+const BoxRow: React.FC<BoxRowProps> = ({ numBoxes, selectedBox, containerStyle }) => {
 	return (
-        <View style={styles.container}>
+        <View style={[styles.container, containerStyle]}>
             {Array.from({ length: numBoxes }).map((_, index) => (
             <View
                 key={index}
@@ -28,8 +29,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        flex: 1,
-        marginLeft: 30,
+        marginHorizontal: 10,
     },
     box: {
         flex: 1,

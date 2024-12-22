@@ -50,3 +50,4 @@ const useSettingsStore = create<SettingsStore>((set) => ({
 }));
 
 export default useSettingsStore;
+export type { UnitType };
