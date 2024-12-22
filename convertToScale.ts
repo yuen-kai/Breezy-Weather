@@ -18,9 +18,9 @@ function getCutoffArray(type: string, unit: UnitType): number[] {
 function convertToScale(value: number, type: string, unit: UnitType): number {
     const cutoffs = getCutoffArray(type, unit);
     for (let i = 0; i < cutoffs.length; i++) {
-        if (value <= cutoffs[i]) return i+1;
+        if (value <= cutoffs[i]) return i;
     }
-    return cutoffs.length+1;
+    return cutoffs.length;
 }
 
 export default convertToScale;
