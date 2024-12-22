@@ -24,9 +24,9 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 
   // Optionally, you can map clothing items to images/icons
   const clothingIcons: Record<string, any> = {
-    'coat': require('../../assets/clothing/coat.png'),
-    'light-jacket': require('../../assets/clothing/light-jacket.png'),
-    't-shirt': require('../../assets/clothing/tshirt.png'),
+    'coat': require('../assets/clothing/coat.png'),
+    'light-jacket': require('../assets/clothing/light-jacket.png'),
+    't-shirt': require('../assets/clothing/tshirt.png'),
     // Add more mappings as needed
   };
 
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    width: 50,
-    height: 50,
+    width: 200,
+    height: 200,
     marginTop: 8,
   },
   windText: {

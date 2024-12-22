@@ -2,8 +2,8 @@
 import React from 'react';
 import { Slot } from 'expo-router';
 import { Provider as PaperProvider } from 'react-native-paper';
-import useSettingsStore from './store/settingsStore';
-import { LightTheme, DarkTheme } from './theme';
+import useSettingsStore from '../store/settingsStore';
+import { LightTheme, DarkTheme } from '../theme';
 
 const Layout = () => {
   const { darkMode } = useSettingsStore();

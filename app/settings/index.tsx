@@ -9,7 +9,7 @@ import {
   Button,
   Divider,
 } from 'react-native-paper';
-import useSettingsStore from '../store/settingsStore';
+import useSettingsStore from '../../store/settingsStore';
 
 const SettingsScreen = () => {
   const {
