@@ -11,7 +11,6 @@ interface ClothingSuggestionProps {
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 	temperature,
-	wind_speed,
 }) => {
 	const { clothingItems } = useSettingsStore();
 

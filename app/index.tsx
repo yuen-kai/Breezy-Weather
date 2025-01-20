@@ -22,22 +22,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const HomeScreen = () => {
 	const [location, setLocation] = useState("Boston");
-	const { weather, loading, error } = useWeather(location);
+	const [expanded, setExpanded] = useState<boolean>(false);
+	const [day, setDay] = useState<number>(0);
+
+	const { weatherData, loading, error } = useWeather(location);
+
 	const { unit } = useSettingsStore();
 
-	const currentTemp =
-		weather && unit === "imperial"
-			? weather.current.temp_f
-			: weather?.current.temp_c;
+	const weather = (day == 0 ? weatherData?.current : weatherData?.forecast.forecastday[day].day)
+	const currentTemp = (day == 0 ? weather?.temp_f : weather?.avgtemp_f);
 
-	const windSpeed =
-		unit === "imperial" ? weather?.current.wind_mph : weather?.current.wind_kph;
-	const humidity = weather?.current.humidity;
-	const uvIndex = weather?.current.uv;
-	const feelsLike =
-		unit === "imperial"
-			? weather?.current.feelslike_f
-			: weather?.current.feelslike_c;
+	const windSpeed = day == 0 ? weather?.wind_mph : weather?.maxwind_mph;
+	const humidity = day == 0 ? weather?.humidity : weather?.avghumidity;
+	// const uvIndex = day == 0 ? weather?.uv : weather?.day.uv;
+
+	const feelsLike = day == 0
+		? weather?.feelslike_f
+		: weather?.avgtemp_f - (weather?.maxwind_mph / 5);
 
 	const temperatureText = ["freezing", "cold", "mild", "warm", "hot"];
 	const windText = ["calm", "breezy", "windy"];
@@ -115,19 +116,20 @@ const HomeScreen = () => {
 
 				{loading && <ActivityIndicator animating style={{ marginTop: 16 }} />}
 				{error && <Text style={styles.errorText}>{error}</Text>}
-
-				{weather && (
+				<Text variant="headlineMedium" style={styles.locationText}>
+					{day==0?"Today":day==1?"Tomorrow":"Day After Tomorrow"}
+				</Text>
+				{weatherData && weather && (
 					<>
 						<Text variant="headlineMedium" style={styles.locationText}>
-							{weather.location.name}, {weather.location.region}
+							{weatherData.location.name}, {weatherData.location.region}
 						</Text>
 
 						{/* Clothing Suggestion */}
-						{feelsLike !== undefined && windSpeed !== undefined && (
+						{feelsLike !== undefined && (
 							<View style={{ height: 150 }}>
 								<ClothingSuggestion
 									temperature={feelsLike}
-									wind_speed={windSpeed}
 								/>
 							</View>
 						)}
@@ -154,9 +156,9 @@ const HomeScreen = () => {
 									{Math.round(feelsLike)}° {unit === "imperial" ? "F" : "C"}
 								</Text> */}
 								</View>
-								<Text variant="titleMedium" style={styles.conditionText}>
-									{weather.current.condition.text}
-								</Text>
+								{/* <Text variant="titleMedium" style={styles.conditionText}>
+									{weather?.condition.text}
+								</Text> */}
 
 								<Divider style={styles.divider} />
 								<InfoRow
@@ -186,6 +188,28 @@ const HomeScreen = () => {
 									metricUnit="%"
 									numBoxes={3}
 								/>
+								{expanded ? <>
+									<InfoRow
+										label="Wind"
+										value={windSpeed}
+										type="wind"
+										textArray={windText}
+										imperialUnit="mph"
+										metricUnit="kph"
+										numBoxes={3}
+									/>
+									<InfoRow
+										label="Humidity"
+										value={humidity}
+										type="humidity"
+										textArray={humidityText}
+										imperialUnit="%"
+										metricUnit="%"
+										numBoxes={3}
+									/></> : null}
+								<Button mode="text" onPress={() => setExpanded(!expanded)}>
+									{expanded ? "Collapse" : "Expand"}
+								</Button>
 							</Card.Content>
 						</Card>
 
@@ -194,8 +218,8 @@ const HomeScreen = () => {
 							Hourly Forecast
 						</Text>
 						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: 8 }}>
-							{weather.forecast.forecastday[0].hour
-								.slice(new Date().getHours())
+							{(day == 0 ? weatherData.forecast.forecastday[day].hour
+								.slice(new Date().getHours()) : weatherData.forecast.forecastday[day].hour)
 								.map((hourItem, index) => {
 									const time = new Date(hourItem.time).toLocaleTimeString([], {
 										hour: '2-digit',
@@ -221,6 +245,14 @@ const HomeScreen = () => {
 					</>
 				)}
 			</ScrollView>
+			<View style={{ flexDirection: "row", justifyContent: "space-around" }}>
+				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0}>
+					Previous
+				</Button>
+				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2}>
+					Next
+				</Button>
+			</View>
 		</SafeAreaView>
 	);
 };

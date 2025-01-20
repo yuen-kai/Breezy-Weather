@@ -25,7 +25,7 @@ const useWeather = (location: string) => {
     fetchWeather();
   }, [location]);
 
-  return { weather, loading, error };
+  return { weatherData: weather, loading, error };
 };
 
 export default useWeather;
