@@ -1,6 +1,7 @@
 // app/index.tsx
-import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Image, StatusBar } from "react-native";
+import React, { useState, useEffect } from "react";
+import * as Location from 'expo-location';
+import { View, StyleSheet, ScrollView, Image, StatusBar, Alert } from "react-native";
 import {
 	Text,
 	TextInput,
@@ -38,7 +39,7 @@ const HomeScreen = () => {
 			? weather?.current.feelslike_f
 			: weather?.current.feelslike_c;
 
-	const temperatureText = ["cold", "cool", "mild", "warm", "hot"];
+	const temperatureText = ["freezing", "cold", "mild", "warm", "hot"];
 	const windText = ["calm", "breezy", "windy"];
 	const humidityText = ["dry", "humid", "very humid"];
 
@@ -51,6 +52,18 @@ const HomeScreen = () => {
 		metricUnit: string;
 		numBoxes: number;
 	}
+
+	// async function getCurrentLocation() {
+
+	// 	let { status } = await Location.requestForegroundPermissionsAsync();
+	// 	if (status !== 'granted') {
+	// 		Alert.alert('Permission to access location was denied');
+	// 		return;
+	// 	}
+
+	// 	let location = (await Location.getCurrentPositionAsync({})).coords;
+	// 	setLocation(location);
+	// }
 
 	const InfoRow: React.FC<InfoRowProps> = ({
 		label,
@@ -91,123 +104,123 @@ const HomeScreen = () => {
 				<Appbar.Content title="Minimal Weather" />
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
-		<ScrollView style={{flex:1}} showsVerticalScrollIndicator={false}>
-			<TextInput
-				label="Location"
-				value={location}
-				onChangeText={setLocation}
-				mode="outlined"
-				style={styles.input}
-			/>
+			<ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+				<TextInput
+					label="Location"
+					value={location}
+					onChangeText={setLocation}
+					mode="outlined"
+					style={styles.input}
+				/>
 
-			{loading && <ActivityIndicator animating style={{ marginTop: 16 }} />}
-			{error && <Text style={styles.errorText}>{error}</Text>}
+				{loading && <ActivityIndicator animating style={{ marginTop: 16 }} />}
+				{error && <Text style={styles.errorText}>{error}</Text>}
 
-			{weather && (
-				<>
-					<Text variant="headlineMedium" style={styles.locationText}>
-						{weather.location.name}, {weather.location.region}
-					</Text>
+				{weather && (
+					<>
+						<Text variant="headlineMedium" style={styles.locationText}>
+							{weather.location.name}, {weather.location.region}
+						</Text>
 
-					{/* Clothing Suggestion */}
-					{feelsLike !== undefined && windSpeed !== undefined && (
-						<View style={{ height: 150 }}>
-							<ClothingSuggestion
-								temperature={feelsLike}
-								wind_speed={windSpeed}
-							/>
-						</View>
-					)}
+						{/* Clothing Suggestion */}
+						{feelsLike !== undefined && windSpeed !== undefined && (
+							<View style={{ height: 150 }}>
+								<ClothingSuggestion
+									temperature={feelsLike}
+									wind_speed={windSpeed}
+								/>
+							</View>
+						)}
 
-					{/* Current Weather Details */}
-					<Card style={styles.currentWeatherCard}>
-						<Card.Content>
-							<View style={styles.currentWeatherRow}>
-								{/* <Image
+						{/* Current Weather Details */}
+						<Card style={styles.currentWeatherCard}>
+							<Card.Content>
+								<View style={styles.currentWeatherRow}>
+									{/* <Image
 									source={{ uri: `https:${weather.current.condition.icon}` }}
 									style={styles.currentWeatherIcon}
 									resizeMode="contain"
 								/> */}
+									<InfoRow
+										label="Overall"
+										value={feelsLike}
+										type="temp"
+										textArray={temperatureText}
+										imperialUnit="°F"
+										metricUnit="°C"
+										numBoxes={5}
+									/>
+									{/* <Text variant="displayMedium" style={styles.currentTemp}>
+									{Math.round(feelsLike)}° {unit === "imperial" ? "F" : "C"}
+								</Text> */}
+								</View>
+								<Text variant="titleMedium" style={styles.conditionText}>
+									{weather.current.condition.text}
+								</Text>
+
+								<Divider style={styles.divider} />
 								<InfoRow
-									label="Overall"
-									value={feelsLike}
+									label="Temperature"
+									value={currentTemp}
 									type="temp"
 									textArray={temperatureText}
 									imperialUnit="°F"
 									metricUnit="°C"
 									numBoxes={5}
 								/>
-								{/* <Text variant="displayMedium" style={styles.currentTemp}>
-									{Math.round(feelsLike)}° {unit === "imperial" ? "F" : "C"}
-								</Text> */}
-							</View>
-							<Text variant="titleMedium" style={styles.conditionText}>
-								{weather.current.condition.text}
-							</Text>
+								<InfoRow
+									label="Wind"
+									value={windSpeed}
+									type="wind"
+									textArray={windText}
+									imperialUnit="mph"
+									metricUnit="kph"
+									numBoxes={3}
+								/>
+								<InfoRow
+									label="Humidity"
+									value={humidity}
+									type="humidity"
+									textArray={humidityText}
+									imperialUnit="%"
+									metricUnit="%"
+									numBoxes={3}
+								/>
+							</Card.Content>
+						</Card>
 
-							<Divider style={styles.divider} />
-							<InfoRow
-								label="Temperature"
-								value={currentTemp}
-								type="temp"
-								textArray={temperatureText}
-								imperialUnit="°F"
-								metricUnit="°C"
-								numBoxes={5}
-							/>
-							<InfoRow
-								label="Wind"
-								value={windSpeed}
-								type="wind"
-								textArray={windText}
-								imperialUnit="mph"
-								metricUnit="kph"
-								numBoxes={3}
-							/>
-							<InfoRow
-								label="Humidity"
-								value={humidity}
-								type="humidity"
-								textArray={humidityText}
-								imperialUnit="%"
-								metricUnit="%"
-								numBoxes={3}
-							/>
-						</Card.Content>
-					</Card>
-
-					{/* Hourly Forecast */}
-					<Text variant="titleMedium" style={styles.sectionTitle}>
-						Hourly Forecast
-					</Text>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingBottom: 16, paddingHorizontal: 8}}>
-						{weather.forecast.forecastday[0].hour
-							.slice(new Date().getHours())
-							.map((hourItem, index) => {
-								const time = new Date(hourItem.time).toLocaleTimeString([], {
-									hour: '2-digit',
-									minute: '2-digit',
-									hour12: true,
-								});
-								return (
-									<HourlyWeatherCard
-										key={index}
-										time={time} // e.g., "01:00 AM"
-										overallScale={
-											convertToScale(hourItem.feelslike_f, "temp", unit) + 1
-										}
-										feelsLike={hourItem.feelslike_f}
-										windSpeed={
-											unit === "imperial" ? hourItem.wind_mph : hourItem.wind_kph
-										}
-										conditionIcon={hourItem.condition.icon}
-									/>
-								);
-							})}
-					</ScrollView>
-				</>
-			)}
-		</ScrollView>
+						{/* Hourly Forecast */}
+						<Text variant="titleMedium" style={styles.sectionTitle}>
+							Hourly Forecast
+						</Text>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: 8 }}>
+							{weather.forecast.forecastday[0].hour
+								.slice(new Date().getHours())
+								.map((hourItem, index) => {
+									const time = new Date(hourItem.time).toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit',
+										hour12: true,
+									});
+									return (
+										<HourlyWeatherCard
+											key={index}
+											time={time} // e.g., "01:00 AM"
+											overallScale={
+												convertToScale(hourItem.feelslike_f, "temp", unit) + 1
+											}
+											feelsLike={hourItem.feelslike_f}
+											windSpeed={
+												unit === "imperial" ? hourItem.wind_mph : hourItem.wind_kph
+											}
+											conditionIcon={hourItem.condition.icon}
+										/>
+									);
+								})}
+						</ScrollView>
+					</>
+				)}
+			</ScrollView>
 		</SafeAreaView>
 	);
 };

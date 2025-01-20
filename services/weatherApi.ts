@@ -1,6 +1,10 @@
 import WeatherApiResponse from '../types/weather';
 
-const WEATHER_API_KEY = '5250cf5c5d184b48b37155515242112';
+// import { config } from 'dotenv';
+
+// config(); // Load environment variables from .env file
+
+const WEATHER_API_KEY = '5250cf5c5d184b48b37155515242112'
 
 const getWeatherData = async (location: string): Promise<WeatherApiResponse> => {
   const url = `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${location}&days=1&aqi=no&alerts=no`;

@@ -30,9 +30,6 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 		// Add more mappings as needed
 	};
 
-	// Determine if wind-resistant clothing is needed
-	const windThreshold = 15; // Example threshold for wind speed
-	const needsWindResistant = wind_speed && wind_speed >= windThreshold;
 
 	return (
 		<View style={styles.container}>
@@ -46,11 +43,6 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 							resizeMode="contain"
 						/>
 					)}
-					{needsWindResistant && (
-						<Text variant="labelSmall" style={styles.windText}>
-							Consider wind-resistant clothing!
-						</Text>
-					)}
 				</>
 			) : (
 				<Text variant="bodyLarge">No suggestion found</Text>
@@ -63,7 +55,7 @@ const styles = StyleSheet.create({
 	container: {
 		marginVertical: 8,
 		alignItems: "center",
-    flex:1
+		flex: 1
 	},
 	icon: {
 		flex: 1,
