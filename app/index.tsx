@@ -231,12 +231,10 @@ const HomeScreen = () => {
 											key={index}
 											time={time} // e.g., "01:00 AM"
 											overallScale={
-												convertToScale(hourItem.feelslike_f, "temp", unit) + 1
+												convertToScale(hourItem.feelslike_f, "temp") + 1
 											}
 											feelsLike={hourItem.feelslike_f}
-											windSpeed={
-												unit === "imperial" ? hourItem.wind_mph : hourItem.wind_kph
-											}
+											windSpeed={hourItem.wind_mph}
 											conditionIcon={hourItem.condition.icon}
 										/>
 									);
@@ -246,10 +244,10 @@ const HomeScreen = () => {
 				)}
 			</ScrollView>
 			<View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0}>
+				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0} style={{flex:1}}>
 					Previous
 				</Button>
-				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2}>
+				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2} style={{flex:1}}>
 					Next
 				</Button>
 			</View>

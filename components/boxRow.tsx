@@ -16,7 +16,7 @@ const BoxRow: React.FC<BoxRowProps> = ({
 	return (
 		<View style={[styles.container, containerStyle]}>
 			{Array.from({ length: numBoxes }).map((_, index) => (
-				<>
+				<React.Fragment key={index}>
 					<View
 						key={index}
 						style={[
@@ -33,7 +33,7 @@ const BoxRow: React.FC<BoxRowProps> = ({
 							]}
 						/>
 					) : null}
-				</>
+				</React.Fragment>
 			))}
 		</View>
 	);
@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		alignItems: "center",
 		marginHorizontal: 10,
+		flex:1,
 	},
 	box: {
 		flex: 1,

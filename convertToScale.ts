@@ -2,7 +2,7 @@
 // Placeholder function to get cutoff arrays
 import {UnitType} from './store/settingsStore';
 
-function getCutoffArray(type: string, unit: UnitType): number[] {
+function getCutoffArray(type: string): number[] {
     switch (type) {
         case 'temp':
             return [30, 50, 70, 90, 999];
@@ -15,8 +15,8 @@ function getCutoffArray(type: string, unit: UnitType): number[] {
     }
 }
 
-function convertToScale(value: number, type: string, unit: UnitType): number {
-    const cutoffs = getCutoffArray(type, unit);
+function convertToScale(value: number, type: string): number {
+    const cutoffs = getCutoffArray(type);
     for (let i = 0; i < cutoffs.length; i++) {
         if (value <= cutoffs[i]) return i;
     }

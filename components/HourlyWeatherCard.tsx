@@ -28,7 +28,7 @@ const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
         <Text variant="titleMedium" style={styles.timeText}>
           {time}
         </Text>
-        <ClothingSuggestion temperature={feelsLike} wind_speed={windSpeed}/>
+        <ClothingSuggestion temperature={feelsLike} textWidth={140}/>
         <Image
           source={{ uri: `https:${conditionIcon}` }}
           style={styles.icon}
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     width: 140,
     alignItems: 'center',
     padding: 8,
-    height: 250,
+    height: 350,
   },
   timeText: {
     textAlign: 'center',

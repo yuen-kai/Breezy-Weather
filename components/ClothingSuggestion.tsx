@@ -6,11 +6,11 @@ import useSettingsStore from "../store/settingsStore";
 
 interface ClothingSuggestionProps {
 	temperature: number; // in correct unit (e.g., already converted to F if user chose imperial)
-	wind_speed?: number; // Optional: wind speed
+	textWidth?: number;
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
-	temperature,
+	temperature, textWidth
 }) => {
 	const { clothingItems } = useSettingsStore();
 
@@ -23,8 +23,11 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 
 	// Optionally, you can map clothing items to images/icons
 	const clothingIcons: Record<string, any> = {
-		coat: require("../assets/clothing/coat.png"),
-		"light-jacket": require("../assets/clothing/light-jacket.png"),
+		"doublecoat_gloves": require("../assets/clothing/doublecoat-gloves.png"),
+		"doublecoat": require("../assets/clothing/doublecoat.png"),
+		"coat": require("../assets/clothing/coat.png"),
+		"coat_sweater": require("../assets/clothing/coat-sweater.png"),
+		"sweater": require("../assets/clothing/light-jacket.png"),
 		"t-shirt": require("../assets/clothing/tshirt.png"),
 		// Add more mappings as needed
 	};
@@ -34,7 +37,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 		<View style={styles.container}>
 			{suggestion ? (
 				<>
-					<Text variant="bodyLarge">Suggested: {suggestion.name}</Text>
+					<Text variant="bodyLarge" style={{width:textWidth, textAlign: "center"}} >Suggested: {suggestion.name}</Text>
 					{clothingIcons[suggestion.id] && (
 						<Image
 							source={clothingIcons[suggestion.id]}
@@ -54,7 +57,7 @@ const styles = StyleSheet.create({
 	container: {
 		marginVertical: 8,
 		alignItems: "center",
-		flex: 1
+		flex: 1,
 	},
 	icon: {
 		flex: 1,

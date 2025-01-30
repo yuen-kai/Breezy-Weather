@@ -28,7 +28,7 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   unit: 'imperial',
   clothingItems: [
     { id: 'doublecoat_gloves', name: 'Double Coat + Gloves', temperatureRange: [-999, 15] },
-    { id: 'doublecoat', name: 'Double Coat + Gloves', temperatureRange: [15, 35] },
+    { id: 'doublecoat', name: 'Double Coat', temperatureRange: [15, 35] },
     { id: 'coat_sweater', name: 'Coat + Sweater', temperatureRange: [35, 45] },
     { id: 'coat', name: 'Coat', temperatureRange: [45, 55] },
     { id: 'sweater', name: 'Sweater', temperatureRange: [55, 65] },
