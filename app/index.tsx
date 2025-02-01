@@ -1,7 +1,9 @@
 // app/index.tsx
 import React, { useState, useEffect } from "react";
+import WeatherApiResponse from '../types/weather';
+import getWeatherData from '../services/weatherApi';
 import * as Location from 'expo-location';
-import { View, StyleSheet, ScrollView, Image, StatusBar, Alert } from "react-native";
+import { View, StyleSheet, ScrollView, Image, StatusBar, Alert, RefreshControl } from "react-native";
 import {
 	Text,
 	TextInput,
@@ -12,47 +14,75 @@ import {
 	Appbar,
 } from "react-native-paper";
 import { Link, router } from "expo-router";
-import useWeather from "../hooks/useWeather";
 import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
-import convertToScale from "@/convertToScale";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const HomeScreen = () => {
 	const [location, setLocation] = useState("Boston");
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const [day, setDay] = useState<number>(0);
+	const [refreshing, setRefreshing] = useState(false);
 
-	const { weatherData, loading, error } = useWeather(location);
+	const [weatherData, setWeatherData] = useState<WeatherApiResponse | null>(null);
+	const [loading, setLoading] = useState<boolean>(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const fetchWeather = async (location: string) => {
+		setLoading(true);
+		setError(null);
+		try {
+			const data = await getWeatherData(location);
+			setWeatherData(data);
+		} catch (err) {
+			setError((err as Error).message);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useState(() => {
+		fetchWeather(location);
+
+		const intervalId = setInterval(() => {
+			fetchWeather(location);
+		}, 1800000); // 30 minutes
+
+		return () => clearInterval(intervalId); // Cleanup when unmounting
+	})
 
 	const { unit } = useSettingsStore();
 
 	const weather = (day == 0 ? weatherData?.current : weatherData?.forecast.forecastday[day].day)
-	const currentTemp = (day == 0 ? weather?.temp_f : weather?.avgtemp_f);
-
-	const windSpeed = day == 0 ? weather?.wind_mph : weather?.maxwind_mph;
-	const humidity = day == 0 ? weather?.humidity : weather?.avghumidity;
-	// const uvIndex = day == 0 ? weather?.uv : weather?.day.uv;
-
 	const feelsLike = day == 0
 		? weather?.feelslike_f
 		: weather?.avgtemp_f - (weather?.maxwind_mph / 5);
 
-	const temperatureText = ["freezing", "cold", "mild", "warm", "hot"];
-	const windText = ["calm", "breezy", "windy"];
-	const humidityText = ["dry", "humid", "very humid"];
+	const temp = day == 0 ? weather?.temp_f : weather?.avgtemp_f;
+	const wind = day == 0 ? weather?.wind_mph : weather?.maxwind_mph;
+	const precipProb = day == 0 ? weatherData.forecast.forecastday[day].hour[new Date().getHours()]?.chance_of_rain : weather?.daily_chance_of_rain;
+	const precip = day == 0 ? weather?.precip_in : weather?.totalprecip_in;
+	const humidity = day == 0 ? weather?.humidity : weather?.avghumidity;
+	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
+	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
+	const cloudCover = day == 0 ? weather?.cloud : null;
+	const windGusts = day == 0 ? weather?.gust_mph : null;
+	const uv = day == 0 ? weather?.uv : weather?.uv;
 
-	interface InfoRowProps {
-		label: string;
-		value: number;
-		type: string;
-		textArray: string[];
-		imperialUnit: string;
-		metricUnit: string;
-		numBoxes: number;
+	const visibility = day == 0 ? weather?.vis_miles : weather?.avgvis_miles;
+
+	const tempCutoffs = [30, 50, 70, 90, 999];
+
+	function convertToScale(value: number, cutoffs: number[]): number {
+		for (let i = 0; i < cutoffs.length; i++) {
+			if (value <= cutoffs[i]) return i;
+		}
+		return cutoffs.length;
 	}
+
+	// const uvIndex = day == 0 ? weather?.uv : weather?.day.uv;
 
 	// async function getCurrentLocation() {
 
@@ -66,14 +96,22 @@ const HomeScreen = () => {
 	// 	setLocation(location);
 	// }
 
+	interface InfoRowProps {
+		label: string;
+		value: number;
+		cutoffs: number[];
+		textArray: string[];
+		imperialUnit: string;
+		metricUnit: string;
+	}
+
 	const InfoRow: React.FC<InfoRowProps> = ({
 		label,
 		value,
-		type,
+		cutoffs,
 		textArray,
 		imperialUnit,
 		metricUnit,
-		numBoxes,
 	}) => {
 		return (
 			<View style={styles.infoRow}>
@@ -82,8 +120,8 @@ const HomeScreen = () => {
 				</Text>
 				<View style={[styles.infoColn, { flex: 3.2 }]}>
 					<BoxRow
-						numBoxes={numBoxes}
-						selectedBox={convertToScale(Math.round(value), type, unit)}
+						numBoxes={cutoffs.length}
+						selectedBox={convertToScale(Math.round(value), cutoffs)}
 					/>
 					<Text variant="labelSmall">
 						{Math.round(value)}{" "}
@@ -92,7 +130,28 @@ const HomeScreen = () => {
 				</View>
 
 				<Text variant="bodyLarge" style={{ flex: 1.3 }}>
-					{textArray[convertToScale(Math.round(value), type, unit)]}
+					{textArray[convertToScale(Math.round(value), cutoffs)]}
+				</Text>
+			</View>
+		);
+	};
+
+	interface TextRowProps {
+		label: string;
+		value: string;
+	}
+
+	const TextRow: React.FC<TextRowProps> = ({
+		label,
+		value
+	}) => {
+		return (
+			<View style={styles.infoRow}>
+				<Text variant="bodyLarge" style={{ flex: 2.2 }}>
+					{label}:
+				</Text>
+				<Text variant="bodyLarge" style={[styles.infoColn, { flex: 3.2 + 1.3 }]}>
+					{value}
 				</Text>
 			</View>
 		);
@@ -105,19 +164,21 @@ const HomeScreen = () => {
 				<Appbar.Content title="Minimal Weather" />
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
-			<ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+			<ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} refreshControl={
+				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
+			} >
 				<TextInput
 					label="Location"
 					value={location}
-					onChangeText={setLocation}
+					onChangeText={(value) => { setLocation(value); fetchWeather(value) }}
 					mode="outlined"
 					style={styles.input}
 				/>
 
-				{loading && <ActivityIndicator animating style={{ marginTop: 16 }} />}
+				{/* {loading && <ActivityIndicator animating style={{ marginTop: 16 }} />} */}
 				{error && <Text style={styles.errorText}>{error}</Text>}
 				<Text variant="headlineMedium" style={styles.locationText}>
-					{day==0?"Today":day==1?"Tomorrow":"Day After Tomorrow"}
+					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 				</Text>
 				{weatherData && weather && (
 					<>
@@ -137,75 +198,106 @@ const HomeScreen = () => {
 						{/* Current Weather Details */}
 						<Card style={styles.currentWeatherCard}>
 							<Card.Content>
+
+								<InfoRow
+									label="Overall"
+									value={feelsLike}
+									cutoffs={tempCutoffs}
+									textArray={["freezing", "cold", "mild", "warm", "hot"]}
+									imperialUnit="°F"
+									metricUnit="°C"
+								/>
+
 								<View style={styles.currentWeatherRow}>
-									{/* <Image
-									source={{ uri: `https:${weather.current.condition.icon}` }}
-									style={styles.currentWeatherIcon}
-									resizeMode="contain"
-								/> */}
-									<InfoRow
-										label="Overall"
-										value={feelsLike}
-										type="temp"
-										textArray={temperatureText}
-										imperialUnit="°F"
-										metricUnit="°C"
-										numBoxes={5}
+									<Image
+										source={{ uri: `https:${weather.condition.icon}` }}
+										style={styles.currentWeatherIcon}
+										resizeMode="contain"
 									/>
-									{/* <Text variant="displayMedium" style={styles.currentTemp}>
-									{Math.round(feelsLike)}° {unit === "imperial" ? "F" : "C"}
-								</Text> */}
+									<Text variant="titleMedium" style={styles.conditionText}>
+										{weather?.condition.text}
+									</Text>
 								</View>
-								{/* <Text variant="titleMedium" style={styles.conditionText}>
-									{weather?.condition.text}
-								</Text> */}
 
 								<Divider style={styles.divider} />
 								<InfoRow
 									label="Temperature"
-									value={currentTemp}
-									type="temp"
-									textArray={temperatureText}
+									value={temp}
+									cutoffs={tempCutoffs}
+									textArray={["freezing", "cold", "mild", "warm", "hot"]}
 									imperialUnit="°F"
 									metricUnit="°C"
-									numBoxes={5}
 								/>
 								<InfoRow
 									label="Wind"
-									value={windSpeed}
-									type="wind"
-									textArray={windText}
+									value={wind}
+									cutoffs={[10, 20, 999]}
+									textArray={["calm", "breezy", "windy"]}
 									imperialUnit="mph"
 									metricUnit="kph"
-									numBoxes={3}
 								/>
 								<InfoRow
+									label="Precipitation"
+									value={precipProb}
+									cutoffs={[20, 50, 999]}
+									textArray={["unlikely", "possibly", "likely"]}
+									imperialUnit="%"
+									metricUnit="%" />
+								{weatherData.forecast.forecastday[day].day.daily_will_it_rain || weatherData.forecast.forecastday[day].day.daily_will_it_snow ?
+									<InfoRow
+										label={temp < 32 ? "Snow" : "Rain"}
+										value={precip}
+										cutoffs={[0.1, 0.3, 999]}
+										textArray={["drizzle", "shower", "downpour"]}
+										imperialUnit="in"
+										metricUnit="cm"
+									/> : null}
+								{temp > 60 || expanded ? <InfoRow
 									label="Humidity"
 									value={humidity}
-									type="humidity"
-									textArray={humidityText}
+									cutoffs={[50, 70, 999]}
+									textArray={["dry", "comfortable", "sticky"]}
 									imperialUnit="%"
 									metricUnit="%"
-									numBoxes={3}
-								/>
+								/> : null}
 								{expanded ? <>
-									<InfoRow
-										label="Wind"
-										value={windSpeed}
-										type="wind"
-										textArray={windText}
-										imperialUnit="mph"
-										metricUnit="kph"
-										numBoxes={3}
-									/>
-									<InfoRow
-										label="Humidity"
-										value={humidity}
-										type="humidity"
-										textArray={humidityText}
+									{day == 0 ? <><InfoRow
+										label="Cloud Cover"
+										value={cloudCover}
+										cutoffs={[20, 50, 999]}
+										textArray={["clear", "cloudy", "overcast"]}
 										imperialUnit="%"
-										metricUnit="%"
-										numBoxes={3}
+										metricUnit="%" />
+										<InfoRow
+											label="Wind Gusts"
+											value={windGusts}
+											cutoffs={[20, 40, 999]}
+											textArray={["stable", "breezy", "gusty"]}
+											imperialUnit="mph"
+											metricUnit="kph" />
+									</> : null}
+									<InfoRow
+										label="UV Index"
+										value={uv}
+										cutoffs={[2, 5, 8, 11, 999]}
+										textArray={["low", "moderate", "high", "very high", "extreme"]}
+										imperialUnit=""
+										metricUnit="" />
+									<InfoRow
+										label="Visibility"
+										value={visibility}
+										cutoffs={[1, 3, 999]}
+										textArray={["foggy", "misty", "clear"]}
+										imperialUnit="mi"
+										metricUnit="km"
+									/>
+									<TextRow
+										label="Sunrise"
+										value={weatherData.forecast.forecastday[day].astro.sunrise}
+									/>
+									<TextRow
+										label="Sunset"
+										value={weatherData.forecast.forecastday[day].astro.sunset}
 									/></> : null}
 								<Button mode="text" onPress={() => setExpanded(!expanded)}>
 									{expanded ? "Collapse" : "Expand"}
@@ -231,7 +323,7 @@ const HomeScreen = () => {
 											key={index}
 											time={time} // e.g., "01:00 AM"
 											overallScale={
-												convertToScale(hourItem.feelslike_f, "temp") + 1
+												convertToScale(hourItem.feelslike_f, tempCutoffs) + 1
 											}
 											feelsLike={hourItem.feelslike_f}
 											windSpeed={hourItem.wind_mph}
@@ -244,10 +336,10 @@ const HomeScreen = () => {
 				)}
 			</ScrollView>
 			<View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0} style={{flex:1}}>
+				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0} style={{ flex: 1 }}>
 					Previous
 				</Button>
-				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2} style={{flex:1}}>
+				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2} style={{ flex: 1 }}>
 					Next
 				</Button>
 			</View>
@@ -294,6 +386,7 @@ const styles = StyleSheet.create({
 	currentWeatherRow: {
 		flexDirection: "row",
 		alignItems: "center",
+		justifyContent: "center"
 		// paddingRight: 30,
 	},
 	currentWeatherIcon: {

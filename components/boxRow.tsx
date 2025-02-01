@@ -18,7 +18,6 @@ const BoxRow: React.FC<BoxRowProps> = ({
 			{Array.from({ length: numBoxes }).map((_, index) => (
 				<React.Fragment key={index}>
 					<View
-						key={index}
 						style={[
 							styles.box,
 							index <= selectedBox && styles.highlightedBox, // Apply highlight style
@@ -26,7 +25,6 @@ const BoxRow: React.FC<BoxRowProps> = ({
 					/>
 					{numBoxes == 3 && index<2 ? (
 						<View
-							key={-index-1}
 							style={[
 								styles.box,
 								{ opacity: 0 }, // Apply highlight style
