@@ -31,6 +31,7 @@ const HomeScreen = () => {
 	const [error, setError] = useState<string | null>(null);
 
 	const fetchWeather = async (location: string) => {
+		if(loading) return;
 		setLoading(true);
 		setError(null);
 		try {
@@ -62,7 +63,7 @@ const HomeScreen = () => {
 
 	const temp = day == 0 ? weather?.temp_f : weather?.avgtemp_f;
 	const wind = day == 0 ? weather?.wind_mph : weather?.maxwind_mph;
-	const precipProb = day == 0 ? weatherData.forecast.forecastday[day].hour[new Date().getHours()]?.chance_of_rain : weather?.daily_chance_of_rain;
+	const precipProb = day == 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()]?.chance_of_rain : weather?.daily_chance_of_rain;
 	const precip = day == 0 ? weather?.precip_in : weather?.totalprecip_in;
 	const humidity = day == 0 ? weather?.humidity : weather?.avghumidity;
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
@@ -279,8 +280,8 @@ const HomeScreen = () => {
 									<InfoRow
 										label="UV Index"
 										value={uv}
-										cutoffs={[2, 5, 8, 11, 999]}
-										textArray={["low", "moderate", "high", "very high", "extreme"]}
+										cutoffs={[2, 5, 999]}
+										textArray={["safe", "caution", "danger"]}
 										imperialUnit=""
 										metricUnit="" />
 									<InfoRow
