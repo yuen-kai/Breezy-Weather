@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 		margin: 2,
 		aspectRatio: 1,
-		backgroundColor: "#f0f0f0",
+		backgroundColor: "lightgray",
 	},
 	highlightedBox: {
 		backgroundColor: "#007AFF",

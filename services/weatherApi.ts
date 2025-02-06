@@ -16,4 +16,14 @@ const getWeatherData = async (location: string): Promise<WeatherApiResponse> => 
   return data;
 };
 
-export default getWeatherData;
+const locationAutocomplete = async (location: string): Promise<Location[]> => {
+  const url = `https://api.weatherapi.com/v1/search.json?key=${WEATHER_API_KEY}&q=${location}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch weather data');
+  }
+  const data = await response.json();
+  return data;
+};
+
+export { getWeatherData, locationAutocomplete };

@@ -8,15 +8,19 @@ import {
   TextInput,
   Button,
   Divider,
+  useTheme,
+  Appbar,
 } from 'react-native-paper';
 import useSettingsStore from '../../store/settingsStore';
+import { Link, router } from "expo-router";
 
 const SettingsScreen = () => {
+
+  const theme = useTheme();
   const {
     scale,
     unit,
     darkMode,
-    setScale,
     setUnit,
     toggleDarkMode,
     clothingItems,
@@ -41,31 +45,19 @@ const SettingsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text variant="titleLarge">Settings</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>      
+      <Appbar.Header>
+				<Appbar.Content title="Settings" />
+				<Appbar.Action icon="home" onPress={() => router.push("/")} />
+			</Appbar.Header>
 
       <Divider style={styles.divider} />
-
+    <View style={{flex:1, padding:16}}>
       {/* Toggle dark mode */}
       <View style={styles.row}>
         <Text variant="bodyLarge">Dark Mode</Text>
         <Switch value={darkMode} onValueChange={toggleDarkMode} />
       </View>
-
-      <Divider style={styles.divider} />
-
-      {/* Scale */}
-      <Text variant="bodyLarge">Weather Scale</Text>
-      <RadioButton.Group onValueChange={(value) => setScale(value as any)} value={scale}>
-        <View style={styles.row}>
-          <RadioButton value="1-3" />
-          <Text variant="bodyMedium">1-3 Scale</Text>
-        </View>
-        <View style={styles.row}>
-          <RadioButton value="1-5" />
-          <Text variant="bodyMedium">1-5 Scale</Text>
-        </View>
-      </RadioButton.Group>
 
       <Divider style={styles.divider} />
 
@@ -125,13 +117,13 @@ const SettingsScreen = () => {
       <Button mode="contained" onPress={handleAddClothing}>
         Add Clothing
       </Button>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
     flex: 1,
   },
   row: {
