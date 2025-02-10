@@ -1,7 +1,7 @@
 // app/components/ClothingSuggestion.tsx
 import React from "react";
 import { StyleSheet, View, Image } from "react-native";
-import { Text } from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 import useSettingsStore from "../store/settingsStore";
 
 interface ClothingSuggestionProps {
@@ -13,6 +13,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 	temperature, textWidth
 }) => {
 	const { clothingItems } = useSettingsStore();
+	const theme = useTheme();
 
 	// Find the first clothing item that matches the temperature range
 	const suggestion = clothingItems.find(
@@ -41,7 +42,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 					{clothingIcons[suggestion.id] && (
 						<Image
 							source={clothingIcons[suggestion.id]}
-							style={styles.icon}
+							style={[styles.icon, { tintColor: theme.colors.onBackground }]}
 							resizeMode="contain"
 						/>
 					)}

@@ -1,7 +1,7 @@
 // app/index.tsx
 import React, { useState, useEffect } from "react";
 import WeatherApiResponse from '../types/weather';
-import {getWeatherData, locationAutocomplete} from '../services/weatherApi';
+import { getWeatherData, locationAutocomplete } from '../services/weatherApi';
 import * as Location from 'expo-location';
 import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl } from "react-native";
 import {
@@ -14,6 +14,7 @@ import {
 	Appbar,
 	SegmentedButtons,
 	useTheme,
+	IconButton
 } from "react-native-paper";
 import { Link, router } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
@@ -23,6 +24,9 @@ import BoxRow from "@/components/boxRow";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Updates from 'expo-updates';
 import { StatusBar } from "expo-status-bar";
+import DropDownPicker from 'react-native-dropdown-picker';
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+
 
 
 const HomeScreen = () => {
@@ -42,18 +46,24 @@ const HomeScreen = () => {
 	// 	checkForUpdate();
 	// }, []);
 
-	const theme = useTheme()
 
-	const [location, setLocation] = useState("Boston");
+	const theme = useTheme()
+	const { unit } = useSettingsStore();
+
+	const [location, setLocation] = useState("Boston, Massachusetts");
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [items, setItems] = useState([{ label: "Boston, Massachusetts", value: "Boston, Massachusetts" }, { label: "New York, New York", value: "New York, New York" }, { label: "Los Angeles, California", value: "Los Angeles, California" }]);
+	const [dropDownLoading, setDropdownLoading] = useState(false);
+
+	const [refreshing, setRefreshing] = useState(false);
+	const [timeOfDay, setTimeOfDay] = useState<string[]>(getTimeOfDay);
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const [day, setDay] = useState<number>(0);
-	const [refreshing, setRefreshing] = useState(false);
 
 	const [weatherData, setWeatherData] = useState<WeatherApiResponse | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const [timeOfDay, setTimeOfDay] = useState<string[]>(getTimeOfDay);
 
 	function getTimeOfDay() {
 		const h = new Date().getHours();
@@ -82,6 +92,7 @@ const HomeScreen = () => {
 
 	useState(() => {
 		fetchWeather(location);
+		getCurrentLocation();
 
 		const intervalId = setInterval(() => {
 			fetchWeather(location);
@@ -90,7 +101,6 @@ const HomeScreen = () => {
 		return () => clearInterval(intervalId); // Cleanup when unmounting
 	})
 
-	const { unit } = useSettingsStore();
 
 	// const weather = (day == 0 ? weatherData?.current : weatherData?.forecast.forecastday[day].day)
 	// const feelsLike = day == 0
@@ -127,7 +137,7 @@ const HomeScreen = () => {
 		});
 	}
 
-	const weather = day==0 && getWeatherTimeOfDay()?.length>0? getWeatherTimeOfDay(): [weatherData?.current];
+	const weather = day == 0 && getWeatherTimeOfDay()?.length > 0 ? getWeatherTimeOfDay() : [weatherData?.current];
 	const feelsLike = weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
@@ -138,8 +148,8 @@ const HomeScreen = () => {
 	const precipProb = weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length || 0;
 	const precip = weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length;
 	const humidity = weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length;
-	const cloudCover = day == 0 ? weatherData?.current.cloud : null;
-	const windGusts = day == 0 ? weatherData?.current.gust_mph : null;
+	const cloudCover = day == 0 ? weatherData?.current.cloud : 50;
+	const windGusts = day == 0 ? weatherData?.current.gust_mph : wind;
 	const uv = weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length;
 	const visibility = weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length;
 
@@ -153,7 +163,6 @@ const HomeScreen = () => {
 	// const uvIndex = day == 0 ? weather?.uv : weather?.day.uv;
 
 	async function getCurrentLocation() {
-
 		let { status } = await Location.requestForegroundPermissionsAsync();
 		if (status !== 'granted') {
 			Alert.alert('Permission to access location was denied');
@@ -161,8 +170,9 @@ const HomeScreen = () => {
 		}
 
 		let location = (await Location.getCurrentPositionAsync()).coords;
-		setLocation(locationAutocomplete(location.latitude + "," +  location.longitude)[0]);
-		fetchWeather(location.latitude + "," +  location.longitude)
+		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
+		setLocation(locations[0].name + ", " + locations[0].region);
+		fetchWeather(location.latitude + "," + location.longitude)
 	}
 
 	interface InfoRowProps {
@@ -225,11 +235,11 @@ const HomeScreen = () => {
 			</View>
 		);
 	};
-	
-	
-	
+
+
+
 	return (
-		<View style={[styles.container,{backgroundColor: theme.colors.background}]}>
+		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
 			{/* <StatusBar style={theme.dark?"light":"dark"} /> */}
 			<Appbar.Header>
 				<Appbar.Content title="Minimal Weather" />
@@ -238,45 +248,126 @@ const HomeScreen = () => {
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
 				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
 			} >
-				<TextInput
-					label="Location"
-					value={location}
-					onChangeText={(value) => { setLocation(value); fetchWeather(value) }}
-					mode="outlined"
-					style={styles.input}
-				/>
-				<Button mode="contained" onPress={() => getCurrentLocation()} style={styles.button}>
-					Use Current Location</Button>
-				{/* {loading && <ActivityIndicator animating style={{ marginTop: 16 }} />} */}
-				{error && <Text style={styles.errorText}>{error}</Text>}
-				<Text variant="headlineMedium" style={styles.locationText}>
-					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
-				</Text>
-				<SegmentedButtons
-					style={{ marginTop: 16 }}
-					value={timeOfDay}
-					onValueChange={(value) => setTimeOfDay(value)}
-					buttons={[
-						{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7 },
-						{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 },
-						{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 },
-						{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 },
-						{ value: 'night', label: 'Night' },
-					]}
-					multiSelect
-					theme={{
-						fonts: {
-							labelLarge: { fontSize: 12 }, // Adjust text size
-						}
-					}}
+				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+					<DropDownPicker
+						listMode="SCROLLVIEW"
+						open={dropdownOpen}
+						setOpen={setDropdownOpen}
+						value={location}
+						searchable
+						items={items.some(item => item.value === location)
+							? items
+							: [{ label: location, value: location }, ...items]}
+						setItems={setItems}
+						setValue={setLocation}
+						onSelectItem={(item) => fetchWeather(item.value)}
+						loading={dropDownLoading}
+						disableLocalSearch={true} // required for remote search
+						onChangeSearchText={(text) => {
+							// Show the loading animation
+							setDropdownLoading(true);
 
-				/>
+							// Get items from API
+							locationAutocomplete(text)
+								.then((items) => {
+
+									// {weatherData.location.name}, {weatherData.location.region}
+									let newItems = items.map((item) => {
+										let locationString = item.name + ", " + item.region;
+										return { label: locationString, value: locationString }
+									})
+									setItems(newItems);
+								})
+								.catch((err) => {
+									console.error(err);
+								})
+								.finally(() => {
+									// Hide the loading animation
+									setDropdownLoading(false);
+								});
+						}}
+						containerStyle={{ flex: 1 }}
+						style={{
+							backgroundColor: theme.colors.elevation.level1, // Paper background color
+							borderColor: theme.colors.outline, // Primary color for border
+						}}
+						textStyle={{
+							color: theme.colors.onSurface, // Adapts to dark mode
+						}}
+						dropDownContainerStyle={{
+							backgroundColor: theme.colors.elevation.level1, // Dropdown background
+							borderColor: theme.colors.outline,
+						}}
+						placeholderStyle={{
+							color: theme.colors.onSurfaceDisabled, // Muted text color
+						}}
+						arrowIconStyle={{
+							tintColor: theme.colors.onSurface, // Arrow color
+						}}
+						listItemLabelStyle={{
+							color: theme.colors.onSurface,
+							fontSize: 16,
+						}}
+						listItemLabelStyleActive={{
+							color: theme.colors.onSurface,
+							fontWeight: "bold",
+						}}
+						tickIconStyle={{
+							tintColor: theme.colors.onSurface,
+						}}
+						// Search bar container
+						searchContainerStyle={{
+							borderBottomColor: theme.colors.outline,
+							borderBottomWidth: 1,
+						}}
+
+						// Search input text
+						searchTextInputStyle={{
+							color: theme.colors.onSurface,
+							borderRadius: theme.roundness,
+							borderColor: theme.colors.outline,
+							fontSize: 16,
+						}}
+
+
+						// style={{ backgroundColor: theme.colors.surface }}
+						// dropDownContainerStyle={{backgroundColor: theme.colors.surface}}
+						// labelStyle={{ color: theme.colors.onSurface }}
+						// searchPlaceholderTextColor={theme.colors.onSurface}
+						// customItemLabelStyle={{ color: theme.colors.onSurface }}
+						// customItemContainerStyle={{ backgroundColor: theme.colors.surface }}
+						// listItemLabelStyle={{ color: theme.colors.onSurface }}
+
+						searchPlaceholder="Search location"
+					/>
+					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
+				</View>
+				{error && <Text style={styles.errorText}>{error}</Text>}
+
 				{weatherData && weather && (
 					<>
 						<Text variant="headlineMedium" style={styles.locationText}>
-							{weatherData.location.name}, {weatherData.location.region}
+							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 						</Text>
+						<SegmentedButtons
+							style={{ marginTop: 16, marginBottom: 32 }}
+							value={timeOfDay}
+							onValueChange={(value) => setTimeOfDay(value)}
+							buttons={[
+								{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7 },
+								{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 },
+								{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 },
+								{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 },
+								{ value: 'night', label: 'Night' },
+							]}
+							multiSelect
+							theme={{
+								fonts: {
+									labelLarge: { fontSize: 12 }, // Adjust text size
+								}
+							}}
 
+						/>
 						{/* Clothing Suggestion */}
 						{feelsLike !== undefined && (
 							<View style={{ height: 150 }}>
@@ -327,6 +418,14 @@ const HomeScreen = () => {
 									imperialUnit="mph"
 									metricUnit="kph"
 								/>
+								{day == 0 && windGusts > wind + 10 ?
+									<InfoRow
+										label="Wind Gusts"
+										value={windGusts}
+										cutoffs={windCutoffs}
+										textArray={windLabels}
+										imperialUnit="mph"
+										metricUnit="kph" /> : null}
 								<InfoRow
 									label="Precipitation"
 									value={precipProb}
@@ -368,21 +467,23 @@ const HomeScreen = () => {
 										imperialUnit="mi"
 										metricUnit="km"
 									/>
-									{day == 0 ? <><InfoRow
-										label="Cloud Cover"
-										value={cloudCover}
-										cutoffs={[20, 50, 999]}
-										textArray={["clear", "cloudy", "overcast"]}
-										imperialUnit="%"
-										metricUnit="%" />
+									{day == 0 ?
+										<InfoRow
+											label="Cloud Cover"
+											value={cloudCover}
+											cutoffs={[20, 50, 999]}
+											textArray={["clear", "cloudy", "overcast"]}
+											imperialUnit="%"
+											metricUnit="%" /> : null}
+									{day == 0 && windGusts <= wind + 10 ?
 										<InfoRow
 											label="Wind Gusts"
-											value={windGusts}
+											value={windGusts ? windGusts : wind}
 											cutoffs={windCutoffs}
 											textArray={windLabels}
 											imperialUnit="mph"
 											metricUnit="kph" />
-									</> : null}
+										: null}
 									<TextRow
 										label="Sunrise"
 										value={weatherData.forecast.forecastday[day].astro.sunrise}

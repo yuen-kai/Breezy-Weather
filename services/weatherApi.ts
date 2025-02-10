@@ -16,7 +16,7 @@ const getWeatherData = async (location: string): Promise<WeatherApiResponse> => 
   return data;
 };
 
-const locationAutocomplete = async (location: string): Promise<Location[]> => {
+const locationAutocomplete = async (location: string): Promise<WeatherApiResponse["location"][]> => {
   const url = `https://api.weatherapi.com/v1/search.json?key=${WEATHER_API_KEY}&q=${location}`;
   const response = await fetch(url);
   if (!response.ok) {
