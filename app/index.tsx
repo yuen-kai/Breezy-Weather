@@ -137,21 +137,21 @@ const HomeScreen = () => {
 		});
 	}
 
-	const weather = day == 0 && getWeatherTimeOfDay()?.length > 0 ? getWeatherTimeOfDay() : [weatherData?.current];
-	const feelsLike = weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length;
+	const weather = getWeatherTimeOfDay()?.length > 0 ? getWeatherTimeOfDay() : (day == 0? [weatherData?.current]: [weatherData?.forecast.forecastday[day].day]);
+	const feelsLike = weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length || weather[0]?.avgtemp_f;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
 	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
 
-	const temp = weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length;
-	const wind = weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length;
-	const precipProb = weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length || 0;
-	const precip = weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length;
-	const humidity = weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length;
+	const temp = weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length || weather[0]?.avgtemp_f;
+	const wind = weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length || weather[0]?.maxwind_mph;
+	const precipProb = weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length || weather[0]?.daily_chance_of_rain || 0;
+	const precip = weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length || weather[0]?.totalprecip_in || 0;
+	const humidity = weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length || weather[0]?.avghumidity;
 	const cloudCover = day == 0 ? weatherData?.current.cloud : 50;
 	const windGusts = day == 0 ? weatherData?.current.gust_mph : wind;
-	const uv = weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length;
-	const visibility = weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length;
+	const uv = weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length || weather[0]?.uv;
+	const visibility = weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length || weather[0]?.avgvis_miles;
 
 	function convertToScale(value: number, cutoffs: number[]): number {
 		for (let i = 0; i < cutoffs.length; i++) {
@@ -197,20 +197,19 @@ const HomeScreen = () => {
 				<Text variant="bodyLarge" style={{ flex: 2.2 }}>
 					{label}:
 				</Text>
+				<Text variant="bodyLarge" style={{ flex: 1.3 }}>
+					{textArray[convertToScale(value, cutoffs)]}
+				</Text>
 				<View style={[styles.infoColn, { flex: 3.2 }]}>
 					<BoxRow
 						numBoxes={cutoffs.length}
-						selectedBox={convertToScale(Math.round(value), cutoffs)}
+						selectedBox={convertToScale(value, cutoffs)}
 					/>
 					<Text variant="labelSmall">
-						{Math.round(value)}{" "}
+						{value?.toPrecision(2)}{" "}
 						{unit === "imperial" ? imperialUnit : metricUnit}
 					</Text>
 				</View>
-
-				<Text variant="bodyLarge" style={{ flex: 1.3 }}>
-					{textArray[convertToScale(Math.round(value), cutoffs)]}
-				</Text>
 			</View>
 		);
 	};
@@ -328,16 +327,6 @@ const HomeScreen = () => {
 							borderColor: theme.colors.outline,
 							fontSize: 16,
 						}}
-
-
-						// style={{ backgroundColor: theme.colors.surface }}
-						// dropDownContainerStyle={{backgroundColor: theme.colors.surface}}
-						// labelStyle={{ color: theme.colors.onSurface }}
-						// searchPlaceholderTextColor={theme.colors.onSurface}
-						// customItemLabelStyle={{ color: theme.colors.onSurface }}
-						// customItemContainerStyle={{ backgroundColor: theme.colors.surface }}
-						// listItemLabelStyle={{ color: theme.colors.onSurface }}
-
 						searchPlaceholder="Search location"
 					/>
 					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
@@ -346,6 +335,7 @@ const HomeScreen = () => {
 
 				{weatherData && weather && (
 					<>
+					{/* <Text>{weather[0].}</Text> */}
 						<Text variant="headlineMedium" style={styles.locationText}>
 							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 						</Text>
