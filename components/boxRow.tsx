@@ -23,7 +23,7 @@ const BoxRow: React.FC<BoxRowProps> = ({
 							index <= selectedBox && styles.highlightedBox, // Apply highlight style
 						]}
 					/>
-					{numBoxes == 3 && index<2 ? (
+					{numBoxes == 3 && index < 2 ? (
 						<View
 							style={[
 								styles.box,
@@ -47,7 +47,8 @@ const styles = StyleSheet.create({
 	},
 	box: {
 		flex: 1,
-		margin: 2,
+		// height: 20,
+		margin: 1,
 		aspectRatio: 1,
 		backgroundColor: "lightgray",
 	},

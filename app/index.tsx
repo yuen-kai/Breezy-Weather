@@ -194,13 +194,13 @@ const HomeScreen = () => {
 	}) => {
 		return (
 			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2.2 }}>
+				<Text variant="bodyLarge" style={{ flex: 2 }}>
 					{label}:
 				</Text>
-				<Text variant="bodyLarge" style={{ flex: 1.3 }}>
+				<Text variant="bodyLarge" style={{ flex: 1.5 }}>
 					{textArray[convertToScale(value, cutoffs)]}
 				</Text>
-				<View style={[styles.infoColn, { flex: 3.2 }]}>
+				<View style={[styles.infoColn, { flex: 2.8 }]}>
 					<BoxRow
 						numBoxes={cutoffs.length}
 						selectedBox={convertToScale(value, cutoffs)}
@@ -360,7 +360,7 @@ const HomeScreen = () => {
 						/>
 						{/* Clothing Suggestion */}
 						{feelsLike !== undefined && (
-							<View style={{ height: 150 }}>
+							<View style={{ height: 190 }}>
 								<ClothingSuggestion
 									temperature={feelsLike}
 								/>
@@ -393,7 +393,7 @@ const HomeScreen = () => {
 
 								<Divider style={styles.divider} />
 								<InfoRow
-									label="Temperature"
+									label="Temp"
 									value={temp}
 									cutoffs={tempCutoffs}
 									textArray={["freezing", "cold", "mild", "warm", "hot"]}
@@ -417,7 +417,7 @@ const HomeScreen = () => {
 										imperialUnit="mph"
 										metricUnit="kph" /> : null}
 								<InfoRow
-									label="Precipitation"
+									label="Precip"
 									value={precipProb}
 									cutoffs={[20, 50, 999]}
 									textArray={["unlikely", "possibly", "likely"]}
@@ -436,7 +436,7 @@ const HomeScreen = () => {
 									label="Humidity"
 									value={humidity}
 									cutoffs={[50, 70, 999]}
-									textArray={["dry", "comfortable", "sticky"]}
+									textArray={["dry", "comfort", "sticky"]}
 									imperialUnit="%"
 									metricUnit="%"
 								/> : null}
