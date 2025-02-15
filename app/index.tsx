@@ -101,25 +101,6 @@ const HomeScreen = () => {
 		return () => clearInterval(intervalId); // Cleanup when unmounting
 	})
 
-
-	// const weather = (day == 0 ? weatherData?.current : weatherData?.forecast.forecastday[day].day)
-	// const feelsLike = day == 0
-	// 	? weather?.feelslike_f
-	// 	: weather?.avgtemp_f - (weather?.maxwind_mph / 5);
-
-	// const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
-	// const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
-
-	// const temp = day == 0 ? weather?.temp_f : weather?.avgtemp_f;
-	// const wind = day == 0 ? weather?.wind_mph : weather?.maxwind_mph;
-	// const precipProb = day == 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()]?.chance_of_rain : weather?.daily_chance_of_rain;
-	// const precip = day == 0 ? weather?.precip_in : weather?.totalprecip_in;
-	// const humidity = day == 0 ? weather?.humidity : weather?.avghumidity;
-	// const cloudCover = day == 0 ? weather?.cloud : null;
-	// const windGusts = day == 0 ? weather?.gust_mph : null;
-	// const uv = day == 0 ? weather?.uv : weather?.uv;
-	// const visibility = day == 0 ? weather?.vis_miles : weather?.avgvis_miles;
-
 	const tempCutoffs = [15, 30, 45, 60, 999];
 	const windCutoffs = [8, 16, 999];
 	const windLabels = ["calm", "breezy", "windy"];
@@ -137,21 +118,30 @@ const HomeScreen = () => {
 		});
 	}
 
-	const weather = getWeatherTimeOfDay()?.length > 0 ? getWeatherTimeOfDay() : (day == 0? [weatherData?.current]: [weatherData?.forecast.forecastday[day].day]);
-	const feelsLike = weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length || weather[0]?.avgtemp_f;
+	const filteredWeather = getWeatherTimeOfDay();
+	const dailyWeather = filteredWeather?.length == 0 && day != 0
+	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
+	const feelsLike = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
 	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
 
-	const temp = weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length || weather[0]?.avgtemp_f;
-	const wind = weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length || weather[0]?.maxwind_mph;
-	const precipProb = weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length || weather[0]?.daily_chance_of_rain || 0;
-	const precip = weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length || weather[0]?.totalprecip_in || 0;
-	const humidity = weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length || weather[0]?.avghumidity;
+	const temp = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length : weather[0]?.avgtemp_f;
+	const wind = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length : weather[0]?.maxwind_mph;
+	const precipProb = filteredWeather?.length > 0? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : (day==0? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain);
+	const precip = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length : weather[0]?.totalprecip_in;
+	const humidity = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length : weather[0]?.avghumidity;
 	const cloudCover = day == 0 ? weatherData?.current.cloud : 50;
 	const windGusts = day == 0 ? weatherData?.current.gust_mph : wind;
-	const uv = weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length || weather[0]?.uv;
-	const visibility = weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length || weather[0]?.avgvis_miles;
+	const uv = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
+	const visibility = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
+
+	function getWeightedAvg(){
+		if(dailyWeather) return feelsLike;
+		const weightedSum = weather?.reduce((acc, curr) => acc + curr?.feelslike_f * Math.max(0.3 * (feelsLike - curr?.temp_f),1), 0);
+		const totalWeight = weather?.reduce((acc, curr) => acc + Math.max(0.3 * (feelsLike - curr?.temp_f),1), 0);
+		return weightedSum / totalWeight;
+	}
 
 	function convertToScale(value: number, cutoffs: number[]): number {
 		for (let i = 0; i < cutoffs.length; i++) {
@@ -182,8 +172,15 @@ const HomeScreen = () => {
 		textArray: string[];
 		imperialUnit: string;
 		metricUnit: string;
+		hasZeroValue?: boolean;
+		zeroText?: string;
 	}
 
+	function roundWeatherValue(value: number) {
+		// if(value==100) console.log(value%10);
+		if (value / 10 > 1) return Math.round(value);
+		return value?.toPrecision(2);
+	}
 	const InfoRow: React.FC<InfoRowProps> = ({
 		label,
 		value,
@@ -191,6 +188,8 @@ const HomeScreen = () => {
 		textArray,
 		imperialUnit,
 		metricUnit,
+		hasZeroValue,
+		zeroText
 	}) => {
 		return (
 			<View style={styles.infoRow}>
@@ -198,15 +197,15 @@ const HomeScreen = () => {
 					{label}:
 				</Text>
 				<Text variant="bodyLarge" style={{ flex: 1.5 }}>
-					{textArray[convertToScale(value, cutoffs)]}
+					{value == 0 && hasZeroValue ? zeroText : textArray[convertToScale(value, cutoffs)]}
 				</Text>
 				<View style={[styles.infoColn, { flex: 2.8 }]}>
 					<BoxRow
 						numBoxes={cutoffs.length}
-						selectedBox={convertToScale(value, cutoffs)}
+						selectedBox={value == 0 && hasZeroValue ? -1 : convertToScale(value, cutoffs)}
 					/>
 					<Text variant="labelSmall">
-						{value?.toPrecision(2)}{" "}
+						{roundWeatherValue(value)}{" "}
 						{unit === "imperial" ? imperialUnit : metricUnit}
 					</Text>
 				</View>
@@ -335,7 +334,7 @@ const HomeScreen = () => {
 
 				{weatherData && weather && (
 					<>
-					{/* <Text>{weather[0].}</Text> */}
+						{/* <Text>{weather[0].}</Text> */}
 						<Text variant="headlineMedium" style={styles.locationText}>
 							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 						</Text>
@@ -362,7 +361,7 @@ const HomeScreen = () => {
 						{feelsLike !== undefined && (
 							<View style={{ height: 190 }}>
 								<ClothingSuggestion
-									temperature={feelsLike}
+									temperature={getWeightedAvg()}
 								/>
 							</View>
 						)}
@@ -422,8 +421,10 @@ const HomeScreen = () => {
 									cutoffs={[20, 50, 999]}
 									textArray={["unlikely", "possibly", "likely"]}
 									imperialUnit="%"
-									metricUnit="%" />
-								{weatherData.forecast.forecastday[day].day.daily_will_it_rain || weatherData.forecast.forecastday[day].day.daily_will_it_snow ?
+									metricUnit="%"
+									hasZeroValue={!weatherData?.forecast.forecastday[day].day.daily_will_it_rain && !weatherData?.forecast.forecastday[day].day.daily_will_it_snow}
+									zeroText="none" />
+								{precipProb > 0 ?
 									<InfoRow
 										label={temp < 32 ? "Snow" : "Rain"}
 										value={precip}
