@@ -1,14 +1,12 @@
 // app/index.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import WeatherApiResponse from '../types/weather';
 import { getWeatherData, locationAutocomplete } from '../services/weatherApi';
 import * as Location from 'expo-location';
 import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl } from "react-native";
 import {
 	Text,
-	TextInput,
 	Button,
-	ActivityIndicator,
 	Card,
 	Divider,
 	Appbar,
@@ -16,37 +14,17 @@ import {
 	useTheme,
 	IconButton
 } from "react-native-paper";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
-import { SafeAreaView } from "react-native-safe-area-context";
-import * as Updates from 'expo-updates';
-import { StatusBar } from "expo-status-bar";
 import DropDownPicker from 'react-native-dropdown-picker';
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const HomeScreen = () => {
-	// useEffect(() => {
-	// 	async function checkForUpdate() {
-	// 		try {
-	// 			const update = await Updates.checkForUpdateAsync();
-	// 			if (update.isAvailable) {
-	// 				await Updates.fetchUpdateAsync();
-	// 				Updates.reloadAsync();  // Reloads the app with the latest update
-	// 			}
-	// 		} catch (e) {
-	// 			console.error('Error checking for update:', e);
-	// 		}
-	// 	}
-
-	// 	checkForUpdate();
-	// }, []);
-
-
+	//States
 	const theme = useTheme()
 	const { unit } = useSettingsStore();
 
@@ -64,6 +42,45 @@ const HomeScreen = () => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const defaultCutoffs = {
+		"Temp": [15, 30, 45, 60, 999],
+		"Wind": [8, 16, 999],
+		"Precip Prob": [20, 50, 999],
+		"Precip Inches": [0.1, 0.3, 999],
+		"Humidity": [50, 70, 999],
+		"Uv": [2, 5, 999],
+		"Visibility": [1, 3, 999],
+		"Cloud Cover": [20, 50, 999]
+	}
+
+	const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
+
+	
+
+	interface Cutoffs {
+		"Temp": number[];
+		"Wind": number[];
+		"Precip Prob": number[];
+		"Precip Inches": number[];
+		"Humidity": number[];
+		"Uv": number[];
+		"Visibility": number[];
+		"Cloud Cover": number[];
+	}
+
+	//Setup (time of day, location, weather data)
+	async function getCurrentLocation() {
+		let { status } = await Location.requestForegroundPermissionsAsync();
+		if (status !== 'granted') {
+			Alert.alert('Permission to access location was denied');
+			return;
+		}
+
+		let location = (await Location.getCurrentPositionAsync()).coords;
+		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
+		setLocation(locations[0].name + ", " + locations[0].region);
+		fetchWeather(location.latitude + "," + location.longitude)
+	}
 
 	function getTimeOfDay() {
 		const h = new Date().getHours();
@@ -90,7 +107,9 @@ const HomeScreen = () => {
 		}
 	};
 
+	//runs at start
 	useState(() => {
+		getCutoffs();
 		fetchWeather(location);
 		getCurrentLocation();
 
@@ -101,9 +120,6 @@ const HomeScreen = () => {
 		return () => clearInterval(intervalId); // Cleanup when unmounting
 	})
 
-	const tempCutoffs = [15, 30, 45, 60, 999];
-	const windCutoffs = [8, 16, 999];
-	const windLabels = ["calm", "breezy", "windy"];
 
 	function getWeatherTimeOfDay() {
 		return weatherData?.forecast.forecastday[day].hour.filter(({ time }) => {
@@ -121,27 +137,53 @@ const HomeScreen = () => {
 	const filteredWeather = getWeatherTimeOfDay();
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
 	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
-	const feelsLike = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
+	const feelsLike = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
 	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
 
-	const temp = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length : weather[0]?.avgtemp_f;
-	const wind = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length : weather[0]?.maxwind_mph;
-	const precipProb = filteredWeather?.length > 0? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : (day==0? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain);
-	const precip = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length : weather[0]?.totalprecip_in;
-	const humidity = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length : weather[0]?.avghumidity;
+	const temp = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length : weather[0]?.avgtemp_f;
+	const wind = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length : weather[0]?.maxwind_mph;
+	const precipProb = filteredWeather?.length > 0 ? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : (day == 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain);
+	const precip = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length : weather[0]?.totalprecip_in;
+	const humidity = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length : weather[0]?.avghumidity;
 	const cloudCover = day == 0 ? weatherData?.current.cloud : 50;
 	const windGusts = day == 0 ? weatherData?.current.gust_mph : wind;
-	const uv = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
-	const visibility = !dailyWeather? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
+	const uv = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
+	const visibility = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
 
-	function getWeightedAvg(){
-		if(dailyWeather) return feelsLike;
-		const weightedSum = weather?.reduce((acc, curr) => acc + curr?.feelslike_f * Math.max(0.3 * (feelsLike - curr?.temp_f),1), 0);
-		const totalWeight = weather?.reduce((acc, curr) => acc + Math.max(0.3 * (feelsLike - curr?.temp_f),1), 0);
+	function getWeightedAvg() {
+		if (dailyWeather) return feelsLike;
+		const weightedSum = weather?.reduce((acc, curr) => acc + curr?.feelslike_f * Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
+		const totalWeight = weather?.reduce((acc, curr) => acc + Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
 		return weightedSum / totalWeight;
 	}
+
+
+	//Info rows
+	async function getCutoffs() {
+		try {
+			const value = await AsyncStorage.getItem('cutoffs');
+			if (value !== null) {
+				setCutoffs(JSON.parse(value));
+			} else {
+				await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
+			}
+		} catch (e) {
+			// error reading value
+		}
+	}
+
+	const tempCutoffs = cutoffs["Temp"];
+	const windCutoffs = cutoffs["Wind"];
+	const precipProbCutoffs = cutoffs["Precip Prob"];
+	const precipCutoffs = cutoffs["Precip Inches"];
+	const humidityCutoffs = cutoffs["Humidity"];
+	const uvCutoffs = cutoffs["Uv"];
+	const visibilityCutoffs = cutoffs["Visibility"];
+	const cloudCoverCutoffs = cutoffs["Cloud Cover"];
+
+	const windLabels = ["calm", "breezy", "windy"];
 
 	function convertToScale(value: number, cutoffs: number[]): number {
 		for (let i = 0; i < cutoffs.length; i++) {
@@ -150,19 +192,9 @@ const HomeScreen = () => {
 		return cutoffs.length;
 	}
 
-	// const uvIndex = day == 0 ? weather?.uv : weather?.day.uv;
-
-	async function getCurrentLocation() {
-		let { status } = await Location.requestForegroundPermissionsAsync();
-		if (status !== 'granted') {
-			Alert.alert('Permission to access location was denied');
-			return;
-		}
-
-		let location = (await Location.getCurrentPositionAsync()).coords;
-		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
-		setLocation(locations[0].name + ", " + locations[0].region);
-		fetchWeather(location.latitude + "," + location.longitude)
+	function roundWeatherValue(value: number) {
+		if (value > 10) return Math.round(value);
+		return value?.toPrecision(2);
 	}
 
 	interface InfoRowProps {
@@ -176,11 +208,6 @@ const HomeScreen = () => {
 		zeroText?: string;
 	}
 
-	function roundWeatherValue(value: number) {
-		// if(value==100) console.log(value%10);
-		if (value / 10 > 1) return Math.round(value);
-		return value?.toPrecision(2);
-	}
 	const InfoRow: React.FC<InfoRowProps> = ({
 		label,
 		value,
@@ -234,11 +261,8 @@ const HomeScreen = () => {
 		);
 	};
 
-
-
 	return (
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-			{/* <StatusBar style={theme.dark?"light":"dark"} /> */}
 			<Appbar.Header>
 				<Appbar.Content title="Minimal Weather" />
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
@@ -246,6 +270,7 @@ const HomeScreen = () => {
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
 				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
 			} >
+				{/* Location picker */}
 				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
 					<DropDownPicker
 						listMode="SCROLLVIEW"
@@ -268,8 +293,6 @@ const HomeScreen = () => {
 							// Get items from API
 							locationAutocomplete(text)
 								.then((items) => {
-
-									// {weatherData.location.name}, {weatherData.location.region}
 									let newItems = items.map((item) => {
 										let locationString = item.name + ", " + item.region;
 										return { label: locationString, value: locationString }
@@ -284,6 +307,7 @@ const HomeScreen = () => {
 									setDropdownLoading(false);
 								});
 						}}
+
 						containerStyle={{ flex: 1 }}
 						style={{
 							backgroundColor: theme.colors.elevation.level1, // Paper background color
@@ -330,24 +354,26 @@ const HomeScreen = () => {
 					/>
 					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
 				</View>
+
 				{error && <Text style={styles.errorText}>{error}</Text>}
 
 				{weatherData && weather && (
 					<>
-						{/* <Text>{weather[0].}</Text> */}
 						<Text variant="headlineMedium" style={styles.locationText}>
 							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 						</Text>
+
+						{/* Time of Day Selector */}
 						<SegmentedButtons
 							style={{ marginTop: 16, marginBottom: 32 }}
 							value={timeOfDay}
 							onValueChange={(value) => setTimeOfDay(value)}
 							buttons={[
-								{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7 },
-								{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 },
-								{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 },
-								{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 },
-								{ value: 'night', label: 'Night' },
+								{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7, }, // 12 am - 7 am
+								{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 }, // 7 am - 11 am
+								{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 }, // 11 am - 3 pm
+								{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 }, // 3 pm - 8 pm
+								{ value: 'night', label: 'Night' }, // 8 pm - 12 am
 							]}
 							multiSelect
 							theme={{
@@ -355,8 +381,8 @@ const HomeScreen = () => {
 									labelLarge: { fontSize: 12 }, // Adjust text size
 								}
 							}}
-
 						/>
+
 						{/* Clothing Suggestion */}
 						{feelsLike !== undefined && (
 							<View style={{ height: 190 }}>
@@ -366,8 +392,8 @@ const HomeScreen = () => {
 							</View>
 						)}
 
-						{/* Current Weather Details */}
-						<Card style={styles.currentWeatherCard}>
+						{/* Weather Details */}
+						<Card style={styles.weatherCard}>
 							<Card.Content>
 
 								<InfoRow
@@ -379,10 +405,10 @@ const HomeScreen = () => {
 									metricUnit="°C"
 								/>
 
-								<View style={styles.currentWeatherRow}>
+								<View style={styles.conditionRow}>
 									<Image
 										source={{ uri: `https:${weatherData?.current.condition.icon}` }}
-										style={styles.currentWeatherIcon}
+										style={styles.weatherIcon}
 										resizeMode="contain"
 									/>
 									<Text variant="titleMedium" style={styles.conditionText}>
@@ -391,6 +417,7 @@ const HomeScreen = () => {
 								</View>
 
 								<Divider style={styles.divider} />
+
 								<InfoRow
 									label="Temp"
 									value={temp}
@@ -418,8 +445,8 @@ const HomeScreen = () => {
 								<InfoRow
 									label="Precip"
 									value={precipProb}
-									cutoffs={[20, 50, 999]}
-									textArray={["unlikely", "possibly", "likely"]}
+									cutoffs={precipProbCutoffs}
+									textArray={["unlikely", "possible", "likely"]}
 									imperialUnit="%"
 									metricUnit="%"
 									hasZeroValue={!weatherData?.forecast.forecastday[day].day.daily_will_it_rain && !weatherData?.forecast.forecastday[day].day.daily_will_it_snow}
@@ -428,7 +455,7 @@ const HomeScreen = () => {
 									<InfoRow
 										label={temp < 32 ? "Snow" : "Rain"}
 										value={precip}
-										cutoffs={[0.1, 0.3, 999]}
+										cutoffs={precipCutoffs}
 										textArray={["drizzle", "shower", "downpour"]}
 										imperialUnit="in"
 										metricUnit="cm"
@@ -436,53 +463,55 @@ const HomeScreen = () => {
 								{temp > 60 || expanded ? <InfoRow
 									label="Humidity"
 									value={humidity}
-									cutoffs={[50, 70, 999]}
+									cutoffs={humidityCutoffs}
 									textArray={["dry", "comfort", "sticky"]}
 									imperialUnit="%"
 									metricUnit="%"
 								/> : null}
-								{expanded ? <>
-
-									<InfoRow
-										label="UV Index"
-										value={uv}
-										cutoffs={[2, 5, 999]}
-										textArray={["safe", "caution", "danger"]}
-										imperialUnit=""
-										metricUnit="" />
-									<InfoRow
-										label="Visibility"
-										value={visibility}
-										cutoffs={[1, 3, 999]}
-										textArray={["foggy", "misty", "clear"]}
-										imperialUnit="mi"
-										metricUnit="km"
-									/>
-									{day == 0 ?
+								{expanded ?
+									<>
 										<InfoRow
-											label="Cloud Cover"
-											value={cloudCover}
-											cutoffs={[20, 50, 999]}
-											textArray={["clear", "cloudy", "overcast"]}
-											imperialUnit="%"
-											metricUnit="%" /> : null}
-									{day == 0 && windGusts <= wind + 10 ?
+											label="UV Index"
+											value={uv}
+											cutoffs={uvCutoffs}
+											textArray={["safe", "caution", "danger"]}
+											imperialUnit=""
+											metricUnit="" />
 										<InfoRow
-											label="Wind Gusts"
-											value={windGusts ? windGusts : wind}
-											cutoffs={windCutoffs}
-											textArray={windLabels}
-											imperialUnit="mph"
-											metricUnit="kph" />
-										: null}
-									<TextRow
-										label="Sunrise"
-										value={weatherData.forecast.forecastday[day].astro.sunrise}
-									/>
-									<TextRow
-										label="Sunset"
-										value={weatherData.forecast.forecastday[day].astro.sunset}
-									/></> : null}
+											label="Visibility"
+											value={visibility}
+											cutoffs={visibilityCutoffs}
+											textArray={["foggy", "misty", "clear"]}
+											imperialUnit="mi"
+											metricUnit="km"
+										/>
+										{day == 0 ?
+											<InfoRow
+												label="Cloud Cover"
+												value={cloudCover}
+												cutoffs={cloudCoverCutoffs}
+												textArray={["clear", "cloudy", "overcast"]}
+												imperialUnit="%"
+												metricUnit="%" />
+											: null}
+										{day == 0 && windGusts <= wind + 10 ?
+											<InfoRow
+												label="Wind Gusts"
+												value={windGusts ? windGusts : wind}
+												cutoffs={windCutoffs}
+												textArray={windLabels}
+												imperialUnit="mph"
+												metricUnit="kph" />
+											: null}
+										<TextRow
+											label="Sunrise"
+											value={weatherData.forecast.forecastday[day].astro.sunrise}
+										/>
+										<TextRow
+											label="Sunset"
+											value={weatherData.forecast.forecastday[day].astro.sunset}
+										/>
+									</> : null}
 								<Button mode="text" onPress={() => setExpanded(!expanded)}>
 									{expanded ? "Collapse" : "Expand"}
 								</Button>
@@ -505,7 +534,7 @@ const HomeScreen = () => {
 									return (
 										<HourlyWeatherCard
 											key={index}
-											time={time} // e.g., "01:00 AM"
+											time={time}
 											overallScale={
 												convertToScale(hourItem.feelslike_f, tempCutoffs) + 1
 											}
@@ -559,19 +588,17 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: 16,
 	},
-	currentWeatherCard: {
+	weatherCard: {
 		marginTop: 16,
 		padding: 16,
 		borderRadius: 8,
-		// backgroundColor: "transparent",
 	},
-	currentWeatherRow: {
+	conditionRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center"
-		// paddingRight: 30,
 	},
-	currentWeatherIcon: {
+	weatherIcon: {
 		width: 60,
 		height: 60,
 	},

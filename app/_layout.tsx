@@ -11,17 +11,6 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-      
-
-			{/* If you want a custom status bar or other layout-level components, add them here */}
-			{/* <Stack
-				screenOptions={{
-					headerShown: false,
-				}}
-			>
-				<Stack.Screen name="home" options={{}} />
-				<Stack.Screen name="settings" options={{}} />
-			</Stack> */}
 			<Slot/>
 			<StatusBar style={darkMode?"light":"dark"} />
 		</PaperProvider>
