@@ -1,6 +1,6 @@
 // app/settings/index.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import {
   Text,
   Switch,
@@ -14,6 +14,10 @@ import {
 import useSettingsStore from '../../store/settingsStore';
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
+
 
 const SettingsScreen = () => {
 
@@ -29,21 +33,33 @@ const SettingsScreen = () => {
     removeClothingItem,
   } = useSettingsStore();
 
+  const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
+
   const [newClothingName, setNewClothingName] = useState('');
   const [tempRangeLow, setTempRangeLow] = useState('');
   const [tempRangeHigh, setTempRangeHigh] = useState('');
-  const [cutoffs, setCutoffs] = useState(
-    {
-      "Temp": [15, 30, 45, 60, 999],
-      "Wind": [8, 16, 999],
-      "Precip Prob": [20, 50, 999],
-      "Precip Inches": [0.1, 0.3, 999],
-      "Humidity": [50, 70, 999],
-      "Uv": [2, 5, 999],
-      "Visibility": [1, 3, 999],
-      "Cloud Cover": [20, 50, 999]
+  const [image, setImage] = useState<string | null>(null);
+
+
+  async function getCutoffs() {
+    try {
+      const value = await AsyncStorage.getItem('cutoffs');
+      if (value !== null) {
+        setCutoffs(JSON.parse(value));
+      } else {
+        await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
+      }
+    } catch (e) {
+      // error reading value
     }
-  )
+  }
+
+  //runs at start
+  useState(() => {
+    getCutoffs();
+  })
+
+
 
   async function saveCutoffs() {
     try {
@@ -57,8 +73,21 @@ const SettingsScreen = () => {
   // AsyncStorage.setItem('unit', JSON.stringify(unit));
   // AsyncStorage.setItem('clothing', JSON.stringify(clothingItems));
 
+  async function pickImage() {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+      selectionLimit: 1,
+    });
 
-  const handleAddClothing = () => {
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  async function handleAddClothing() {
     if (!newClothingName || !tempRangeLow || !tempRangeHigh) return;
     addClothingItem({
       id: newClothingName.toLowerCase().replace(/\s/g, '-'),
@@ -103,7 +132,7 @@ const SettingsScreen = () => {
 
         {/* Edit Cutoffs */}
         <Text variant="bodyLarge">Upper Limit Cutoffs</Text>
-        {Object.entries(cutoffs).map(([key, values]) => (
+        {Object.entries(cutoffs).map(([key, values]: [string, number[]]) => (
           <View key={key} style={styles.cutoffsRow}>
             <Text variant="bodyMedium" style={{ flex: 1 }}>
               {key}
@@ -141,31 +170,37 @@ const SettingsScreen = () => {
             <Button onPress={() => removeClothingItem(item.id)}>Remove</Button>
           </View>
         ))}
-
-        <TextInput
-          label="Clothing Name"
-          value={newClothingName}
-          onChangeText={setNewClothingName}
-          mode="outlined"
-          style={styles.input}
-        />
-        <View style={[styles.row, { justifyContent: 'space-between' }]}>
-          <TextInput
-            label="Low Temp"
-            value={tempRangeLow}
-            onChangeText={setTempRangeLow}
-            mode="outlined"
-            keyboardType="numeric"
-            style={[styles.input, { flex: 1, marginRight: 4 }]}
-          />
-          <TextInput
-            label="High Temp"
-            value={tempRangeHigh}
-            onChangeText={setTempRangeHigh}
-            mode="outlined"
-            keyboardType="numeric"
-            style={[styles.input, { flex: 1, marginLeft: 4 }]}
-          />
+        <View style={styles.row}>
+          <TouchableOpacity onPress={pickImage}>
+            <Image source={{ uri: image }} style={{ height: 120, aspectRatio: 1, margin: 16, backgroundColor: theme.colors.elevation.level2 }} />
+          </TouchableOpacity>
+          <View style={{ flex: 4 }}>
+            <TextInput
+              label="Clothing Name"
+              value={newClothingName}
+              onChangeText={setNewClothingName}
+              mode="outlined"
+              style={styles.input}
+            />
+            <View style={[styles.row, { justifyContent: 'space-between' }]}>
+              <TextInput
+                label="Low Temp"
+                value={tempRangeLow}
+                onChangeText={setTempRangeLow}
+                mode="outlined"
+                keyboardType="numeric"
+                style={[styles.input, { flex: 1, marginRight: 4 }]}
+              />
+              <TextInput
+                label="High Temp"
+                value={tempRangeHigh}
+                onChangeText={setTempRangeHigh}
+                mode="outlined"
+                keyboardType="numeric"
+                style={[styles.input, { flex: 1, marginLeft: 4 }]}
+              />
+            </View>
+          </View>
         </View>
         <Button mode="contained" onPress={handleAddClothing}>
           Add Clothing

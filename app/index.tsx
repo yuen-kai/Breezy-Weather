@@ -21,6 +21,7 @@ import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Cutoffs, defaultCutoffs } from "@/types/cutoffs";
 
 
 const HomeScreen = () => {
@@ -42,46 +43,22 @@ const HomeScreen = () => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const defaultCutoffs = {
-		"Temp": [15, 30, 45, 60, 999],
-		"Wind": [8, 16, 999],
-		"Precip Prob": [20, 50, 999],
-		"Precip Inches": [0.1, 0.3, 999],
-		"Humidity": [50, 70, 999],
-		"Uv": [2, 5, 999],
-		"Visibility": [1, 3, 999],
-		"Cloud Cover": [20, 50, 999]
-	}
-
 	const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
 
-	
-
-	interface Cutoffs {
-		"Temp": number[];
-		"Wind": number[];
-		"Precip Prob": number[];
-		"Precip Inches": number[];
-		"Humidity": number[];
-		"Uv": number[];
-		"Visibility": number[];
-		"Cloud Cover": number[];
-	}
-
-	//Setup (time of day, location, weather data)
-	async function getCurrentLocation() {
-		let { status } = await Location.requestForegroundPermissionsAsync();
-		if (status !== 'granted') {
-			Alert.alert('Permission to access location was denied');
-			return;
+	//Setup (settings, time of day, location, weather data)
+	async function getCutoffs() {
+		try {
+			const value = await AsyncStorage.getItem('cutoffs');
+			if (value !== null) {
+				setCutoffs(JSON.parse(value));
+			} else {
+				await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
+			}
+		} catch (e) {
+			// error reading value
 		}
-
-		let location = (await Location.getCurrentPositionAsync()).coords;
-		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
-		setLocation(locations[0].name + ", " + locations[0].region);
-		fetchWeather(location.latitude + "," + location.longitude)
 	}
-
+	
 	function getTimeOfDay() {
 		const h = new Date().getHours();
 		if (h >= 20 && h < 24) return ["night"];
@@ -93,6 +70,7 @@ const HomeScreen = () => {
 		return tempTimeOfDay;
 	}
 
+	
 	const fetchWeather = async (location: string) => {
 		if (loading) return;
 		setLoading(true);
@@ -106,6 +84,20 @@ const HomeScreen = () => {
 			setLoading(false);
 		}
 	};
+
+	
+	async function getCurrentLocation() {
+		let { status } = await Location.requestForegroundPermissionsAsync();
+		if (status !== 'granted') {
+			Alert.alert('Permission to access location was denied');
+			return;
+		}
+
+		let location = (await Location.getCurrentPositionAsync()).coords;
+		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
+		setLocation(locations[0].name + ", " + locations[0].region);
+		fetchWeather(location.latitude + "," + location.longitude)
+	}
 
 	//runs at start
 	useState(() => {
@@ -126,11 +118,11 @@ const HomeScreen = () => {
 			const h = new Date(time).getHours();
 			const curr = new Date().getHours();
 			return (day === 0 ? h >= curr : true) &&
-				(h >= 12 && h < 7) ? timeOfDay.includes('earlyMorning') :
+				((h >= 0 && h < 7) ? timeOfDay.includes('earlyMorning') :
 				(h >= 7 && h < 11) ? timeOfDay.includes('morning') :
 					(h >= 11 && h < 15) ? timeOfDay.includes('noon') :
 						(h >= 15 && h < 20) ? timeOfDay.includes('evening') :
-							(h >= 20 && h < 24) ? timeOfDay.includes('night') : false;
+							(h >= 20 && h < 24) ? timeOfDay.includes('night') : false);
 		});
 	}
 
@@ -161,19 +153,6 @@ const HomeScreen = () => {
 
 
 	//Info rows
-	async function getCutoffs() {
-		try {
-			const value = await AsyncStorage.getItem('cutoffs');
-			if (value !== null) {
-				setCutoffs(JSON.parse(value));
-			} else {
-				await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
-			}
-		} catch (e) {
-			// error reading value
-		}
-	}
-
 	const tempCutoffs = cutoffs["Temp"];
 	const windCutoffs = cutoffs["Wind"];
 	const precipProbCutoffs = cutoffs["Precip Prob"];
