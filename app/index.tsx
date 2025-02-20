@@ -46,6 +46,10 @@ const HomeScreen = () => {
 	const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
 
 	//Setup (settings, time of day, location, weather data)
+	async function resetAsyncStorage() {
+		await AsyncStorage.removeItem("cutoffs");
+	}
+	
 	async function getCutoffs() {
 		try {
 			const value = await AsyncStorage.getItem('cutoffs');
