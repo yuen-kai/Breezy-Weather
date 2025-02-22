@@ -15,6 +15,7 @@ import useSettingsStore from '../../store/settingsStore';
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
+import { ClothingItem, defaultClothingItems } from '@/types/clothing';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 
@@ -28,12 +29,12 @@ const SettingsScreen = () => {
     darkMode,
     setUnit,
     toggleDarkMode,
-    clothingItems,
-    addClothingItem,
-    removeClothingItem,
   } = useSettingsStore();
 
   const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
+
+  
+  const [clothingItems, setClothingItems] = useState<ClothingItem[]>(defaultClothingItems);
 
   const [newClothingName, setNewClothingName] = useState('');
   const [tempRangeLow, setTempRangeLow] = useState('');

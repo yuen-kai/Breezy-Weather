@@ -1,5 +1,5 @@
 // app/index.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WeatherApiResponse from '../types/weather';
 import { getWeatherData, locationAutocomplete } from '../services/weatherApi';
 import * as Location from 'expo-location';
@@ -23,6 +23,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cutoffs, defaultCutoffs } from "@/types/cutoffs";
 
+let initial = true
 
 const HomeScreen = () => {
 	//States
@@ -104,7 +105,9 @@ const HomeScreen = () => {
 	}
 
 	//runs at start
-	useState(() => {
+	useEffect(() => {
+		if(!initial) return
+		initial = false
 		getCutoffs();
 		fetchWeather(location);
 		getCurrentLocation();
@@ -114,7 +117,7 @@ const HomeScreen = () => {
 		}, 1800000); // 30 minutes
 
 		return () => clearInterval(intervalId); // Cleanup when unmounting
-	})
+	}, []);
 
 
 	function getWeatherTimeOfDay() {

@@ -2,7 +2,8 @@
 import React from "react";
 import { StyleSheet, View, Image } from "react-native";
 import { Text, useTheme } from "react-native-paper";
-import useSettingsStore from "../store/settingsStore";
+import { ClothingItem } from "@/types/clothing";
+import useSettingsStore from "@/store/settingsStore";
 
 interface ClothingSuggestionProps {
 	temperature: number; // in correct unit (e.g., already converted to F if user chose imperial)
@@ -10,38 +11,25 @@ interface ClothingSuggestionProps {
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
-	temperature, textWidth
+	 temperature, textWidth
 }) => {
-	const { clothingItems } = useSettingsStore();
 	const theme = useTheme();
+	const { clothingItems } = useSettingsStore();
 
-	// Find the first clothing item that matches the temperature range
-	const suggestion = clothingItems.find(
+	// Find the first clothing item that matches the temperature range given a sorted list
+	const suggestion: ClothingItem = clothingItems.find(
 		(item) =>
-			temperature >= item.temperatureRange[0] &&
 			temperature < item.temperatureRange[1]
-	);
-
-	// Optionally, you can map clothing items to images/icons
-	const clothingIcons: Record<string, any> = {
-		"doublecoat_gloves": require("../assets/clothing/doublecoat-gloves.png"),
-		"doublecoat": require("../assets/clothing/doublecoat.png"),
-		"coat": require("../assets/clothing/coat.png"),
-		"coat_sweater": require("../assets/clothing/coat-sweater.png"),
-		"sweater": require("../assets/clothing/light-jacket.png"),
-		"t-shirt": require("../assets/clothing/tshirt.png"),
-		// Add more mappings as needed
-	};
-
+	) ?? clothingItems[-1];
 
 	return (
 		<View style={styles.container}>
 			{suggestion ? (
 				<>
 					<Text variant="bodyLarge" style={{width:textWidth, textAlign: "center"}} >Suggested: {suggestion.name}</Text>
-					{clothingIcons[suggestion.id] && (
+					{suggestion.image && (
 						<Image
-							source={clothingIcons[suggestion.id]}
+							source={suggestion.image}
 							style={[styles.icon, { tintColor: theme.colors.onBackground }]}
 							resizeMode="contain"
 						/>
