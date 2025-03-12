@@ -20,15 +20,11 @@ import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Cutoffs, defaultCutoffs } from "@/types/cutoffs";
-
-let initial = true
 
 const HomeScreen = () => {
 	//States
 	const theme = useTheme()
-	const { unit } = useSettingsStore();
+	const { unit, cutoffs } = useSettingsStore();
 
 	const [location, setLocation] = useState("Boston, Massachusetts");
 	const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -44,26 +40,9 @@ const HomeScreen = () => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
-
 	//Setup (settings, time of day, location, weather data)
-	async function resetAsyncStorage() {
-		await AsyncStorage.removeItem("cutoffs");
-	}
-	
-	async function getCutoffs() {
-		try {
-			const value = await AsyncStorage.getItem('cutoffs');
-			if (value !== null) {
-				setCutoffs(JSON.parse(value));
-			} else {
-				await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
-			}
-		} catch (e) {
-			// error reading value
-		}
-	}
-	
+
+
 	function getTimeOfDay() {
 		const h = new Date().getHours();
 		if (h >= 20 && h < 24) return ["night"];
@@ -75,7 +54,7 @@ const HomeScreen = () => {
 		return tempTimeOfDay;
 	}
 
-	
+
 	const fetchWeather = async (location: string) => {
 		if (loading) return;
 		setLoading(true);
@@ -90,7 +69,7 @@ const HomeScreen = () => {
 		}
 	};
 
-	
+
 	async function getCurrentLocation() {
 		let { status } = await Location.requestForegroundPermissionsAsync();
 		if (status !== 'granted') {
@@ -104,11 +83,8 @@ const HomeScreen = () => {
 		fetchWeather(location.latitude + "," + location.longitude)
 	}
 
-	//runs at start
+	//runs whenever screen is loaded
 	useEffect(() => {
-		if(!initial) return
-		initial = false
-		getCutoffs();
 		fetchWeather(location);
 		getCurrentLocation();
 
@@ -126,36 +102,56 @@ const HomeScreen = () => {
 			const curr = new Date().getHours();
 			return (day === 0 ? h >= curr : true) &&
 				((h >= 0 && h < 7) ? timeOfDay.includes('earlyMorning') :
-				(h >= 7 && h < 11) ? timeOfDay.includes('morning') :
-					(h >= 11 && h < 15) ? timeOfDay.includes('noon') :
-						(h >= 15 && h < 20) ? timeOfDay.includes('evening') :
-							(h >= 20 && h < 24) ? timeOfDay.includes('night') : false);
+					(h >= 7 && h < 11) ? timeOfDay.includes('morning') :
+						(h >= 11 && h < 15) ? timeOfDay.includes('noon') :
+							(h >= 15 && h < 20) ? timeOfDay.includes('evening') :
+								(h >= 20 && h < 24) ? timeOfDay.includes('night') : false);
 		});
 	}
 
 	const filteredWeather = getWeatherTimeOfDay();
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
-	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
+	const weather = filteredWeather?.length > 0  ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
+	
 	const feelsLike = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
 	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
-
 	const temp = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length : weather[0]?.avgtemp_f;
 	const wind = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length : weather[0]?.maxwind_mph;
-	const precipProb = filteredWeather?.length > 0 ? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : (day == 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain);
+	const precipProb = filteredWeather?.length > 0 ? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
 	const precip = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length : weather[0]?.totalprecip_in;
+
 	const humidity = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length : weather[0]?.avghumidity;
-	const cloudCover = day == 0 ? weatherData?.current.cloud : 50;
-	const windGusts = day == 0 ? weatherData?.current.gust_mph : wind;
+	const cloudCover = day === 0 ? weatherData?.current.cloud : 50;
+	const windGusts = day === 0 ? weatherData?.current.gust_mph : wind;
 	const uv = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
 	const visibility = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
+
+	const conditionIcon =  day === 0 ? weatherData?.current.condition.icon: weatherData?.forecast.forecastday[day].day.condition.icon;
+	const conditionText = day === 0 ? weatherData?.current.condition.text : weatherData?.forecast.forecastday[day].day.condition.text;
 
 	function getWeightedAvg() {
 		if (dailyWeather) return feelsLike;
 		const weightedSum = weather?.reduce((acc, curr) => acc + curr?.feelslike_f * Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
 		const totalWeight = weather?.reduce((acc, curr) => acc + Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
 		return weightedSum / totalWeight;
+	}
+
+	function convertTemperature(temp: number): number {
+		return unit === "imperial" ? temp : (temp - 32) * (5 / 9);
+	}
+
+	function convertWindSpeed(speed: number): number {
+		return unit === "imperial" ? speed : speed * 1.60934;
+	}
+
+	function convertPrecip(precip: number): number {
+		return unit === "imperial" ? precip : precip * 2.54;
+	}
+
+	function convertVisibility(vis: number): number {
+		return unit === "imperial" ? vis : vis * 1.60934;
 	}
 
 
@@ -178,7 +174,28 @@ const HomeScreen = () => {
 		return cutoffs.length;
 	}
 
-	function roundWeatherValue(value: number) {
+	function roundWeatherValue(label: string, value: number) {
+		switch (label) {
+			case "Overall":
+			case "Temp":
+				value = unit === "imperial" ? value : convertTemperature(value);
+				break;
+			case "Wind":
+			case "Wind Gusts":
+				value = unit === "imperial" ? value : convertWindSpeed(value);
+				break;
+			case "Precip Inches":
+				value = unit === "imperial" ? value : convertPrecip(value);
+				break;
+			case "Visibility":
+				value = unit === "imperial" ? value : convertVisibility(value);
+				break;
+			case "Humidity":
+			case "UV Index":
+			case "Cloud Cover":
+			default:
+				break;
+		}
 		if (value > 10) return Math.round(value);
 		return value?.toPrecision(2);
 	}
@@ -218,7 +235,7 @@ const HomeScreen = () => {
 						selectedBox={value == 0 && hasZeroValue ? -1 : convertToScale(value, cutoffs)}
 					/>
 					<Text variant="labelSmall">
-						{roundWeatherValue(value)}{" "}
+						{roundWeatherValue(label, value)}{" "}
 						{unit === "imperial" ? imperialUnit : metricUnit}
 					</Text>
 				</View>
@@ -371,39 +388,42 @@ const HomeScreen = () => {
 
 						{/* Clothing Suggestion */}
 						{feelsLike !== undefined && (
-							<View style={{ height: 190 }}>
+							<View style={{ height: 200 }}>
 								<ClothingSuggestion
 									temperature={getWeightedAvg()}
 								/>
 							</View>
 						)}
+						<View style={styles.weatherCard}>
+
+							<InfoRow
+								label="Overall"
+								value={feelsLike}
+								cutoffs={tempCutoffs}
+								textArray={["freezing", "cold", "mild", "warm", "hot"]}
+								imperialUnit="°F"
+								metricUnit="°C"
+							/>
+
+							<View style={styles.conditionRow}>
+								<Image
+									source={{ uri: `https:${conditionIcon}` }}
+									style={styles.weatherIcon}
+									resizeMode="contain"
+								/>
+								<Text variant="titleMedium" style={styles.conditionText}>
+									{conditionText}
+								</Text>
+							</View>
+						</View>
 
 						{/* Weather Details */}
-						<Card style={styles.weatherCard}>
+						<Card style={[styles.weatherCard, { backgroundColor: theme.colors.elevation.level1 }]} elevation={3}>
+							<Text variant="titleMedium" style={{ textAlign: "center" }} >
+								Details
+							</Text>
+							<Divider style={{ margin: 16, marginTop: 8 }} />
 							<Card.Content>
-
-								<InfoRow
-									label="Overall"
-									value={feelsLike}
-									cutoffs={tempCutoffs}
-									textArray={["freezing", "cold", "mild", "warm", "hot"]}
-									imperialUnit="°F"
-									metricUnit="°C"
-								/>
-
-								<View style={styles.conditionRow}>
-									<Image
-										source={{ uri: `https:${weatherData?.current.condition.icon}` }}
-										style={styles.weatherIcon}
-										resizeMode="contain"
-									/>
-									<Text variant="titleMedium" style={styles.conditionText}>
-										{weatherData?.current.condition.text}
-									</Text>
-								</View>
-
-								<Divider style={styles.divider} />
-
 								<InfoRow
 									label="Temp"
 									value={temp}
@@ -575,9 +595,8 @@ const styles = StyleSheet.create({
 		marginTop: 16,
 	},
 	weatherCard: {
-		marginTop: 16,
 		padding: 16,
-		borderRadius: 8,
+		borderRadius: 32,
 	},
 	conditionRow: {
 		flexDirection: "row",

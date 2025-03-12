@@ -11,7 +11,7 @@ import {
   useTheme,
   Appbar,
 } from 'react-native-paper';
-import useSettingsStore from '../../store/settingsStore';
+import useSettingsStore, { UnitType } from '../../store/settingsStore';
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
@@ -24,55 +24,53 @@ const SettingsScreen = () => {
 
   const theme = useTheme();
   const {
-    scale,
     unit,
     darkMode,
+    cutoffs, 
+    clothingItems,
     setUnit,
-    toggleDarkMode,
+    setDarkMode,
+    setCutoffs, 
+    setClothingItems
   } = useSettingsStore();
-
-  const [cutoffs, setCutoffs] = useState<Cutoffs>(defaultCutoffs)
-
-  
-  const [clothingItems, setClothingItems] = useState<ClothingItem[]>(defaultClothingItems);
 
   const [newClothingName, setNewClothingName] = useState('');
   const [tempRangeLow, setTempRangeLow] = useState('');
   const [tempRangeHigh, setTempRangeHigh] = useState('');
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<string>('');
 
-
-  async function getCutoffs() {
+  async function saveUnit(value: UnitType) {
     try {
-      const value = await AsyncStorage.getItem('cutoffs');
-      if (value !== null) {
-        setCutoffs(JSON.parse(value));
-      } else {
-        await AsyncStorage.setItem('cutoffs', JSON.stringify(defaultCutoffs));
-      }
+      await AsyncStorage.setItem('unit', JSON.stringify(value));
     } catch (e) {
-      // error reading value
+      console.error("Error saving unit", e);
     }
   }
-
-  //runs at start
-  useState(() => {
-    getCutoffs();
-  })
-
-
+  
+  async function saveTheme(value: boolean) {
+    try {
+      await AsyncStorage.setItem('darkMode', JSON.stringify(value));
+    } catch (e) {
+      console.error("Error saving theme", e);
+    }
+  }
 
   async function saveCutoffs() {
     try {
       await AsyncStorage.setItem('cutoffs', JSON.stringify(cutoffs));
     } catch (e) {
-      console.error("Error saving settings", e);
+      console.error("Error saving cutoffs", e);
     }
   };
 
-  // AsyncStorage.setItem('theme', JSON.stringify(darkMode));
-  // AsyncStorage.setItem('unit', JSON.stringify(unit));
-  // AsyncStorage.setItem('clothing', JSON.stringify(clothingItems));
+  async function saveClothingItems(value: ClothingItem[]) {
+    try {
+      await AsyncStorage.setItem('clothing', JSON.stringify(value));
+    } catch (e) {
+      console.error("Error saving clothing items", e);
+    }
+  }
+
 
   async function pickImage() {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -88,17 +86,23 @@ const SettingsScreen = () => {
     }
   };
 
-  async function handleAddClothing() {
+  function handleAddClothing() {
     if (!newClothingName || !tempRangeLow || !tempRangeHigh) return;
-    addClothingItem({
-      id: newClothingName.toLowerCase().replace(/\s/g, '-'),
+    let newClothingItems: ClothingItem[] = [...clothingItems, {
       name: newClothingName,
       temperatureRange: [Number(tempRangeLow), Number(tempRangeHigh)],
-    });
+      image: image,
+    }]
+    setClothingItems(newClothingItems);
+    saveClothingItems(newClothingItems);
     setNewClothingName('');
     setTempRangeLow('');
     setTempRangeHigh('');
   };
+
+  function removeClothingItem(name: string) {
+    setClothingItems(clothingItems.filter((item) => item.name !== name));
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -112,22 +116,16 @@ const SettingsScreen = () => {
         {/* Toggle dark mode */}
         <View style={styles.row}>
           <Text variant="bodyLarge">Dark Mode</Text>
-          <Switch value={darkMode} onValueChange={toggleDarkMode} />
+          <Switch value={darkMode} onValueChange={(value) => {setDarkMode(value); saveTheme(value)}} />
         </View>
 
         <Divider style={styles.divider} />
 
         {/* Unit */}
         <Text variant="bodyLarge">Units</Text>
-        <RadioButton.Group onValueChange={(value) => setUnit(value as any)} value={unit}>
-          <View style={styles.row}>
-            <RadioButton value="imperial" />
-            <Text variant="bodyMedium">Imperial (F)</Text>
-          </View>
-          <View style={styles.row}>
-            <RadioButton value="metric" />
-            <Text variant="bodyMedium">Metric (C)</Text>
-          </View>
+        <RadioButton.Group onValueChange={(value) => {setUnit(value as UnitType);saveUnit(value as UnitType)}} value={unit}>
+          <RadioButton.Item label="Imperial (F)" value="imperial" />
+          <RadioButton.Item label="Metric (C)" value="metric" />
         </RadioButton.Group>
         <Divider style={styles.divider} />
 
@@ -148,7 +146,7 @@ const SettingsScreen = () => {
                     newValues[i] = parseInt(text);
                     setCutoffs({ ...cutoffs, [key]: newValues });
                   }}
-                  onEndEditing={saveCutoffs}
+                  onEndEditing={()=>saveCutoffs}
                   mode="outlined"
                   keyboardType="numeric"
                   style={{ flex: 1, marginHorizontal: 4 }}
@@ -164,11 +162,11 @@ const SettingsScreen = () => {
           Clothing Items
         </Text>
         {clothingItems.map((item) => (
-          <View key={item.id} style={styles.row}>
+          <View key={item.name} style={styles.row}>
             <Text variant="bodyMedium">
               {item.name} ({item.temperatureRange[0]} - {item.temperatureRange[1]})
             </Text>
-            <Button onPress={() => removeClothingItem(item.id)}>Remove</Button>
+            <Button onPress={() => removeClothingItem(item.name)}>Remove</Button>
           </View>
         ))}
         <View style={styles.row}>

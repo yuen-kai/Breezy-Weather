@@ -1,9 +1,9 @@
-import { ImageSourcePropType } from "react-native";
+import { ImageSource } from "expo-image";
 
 export interface ClothingItem {
     name: string;
     temperatureRange: [number, number];
-    image: ImageSourcePropType | undefined
+    image: string | number
 }
 
 

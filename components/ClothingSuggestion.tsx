@@ -1,6 +1,7 @@
 // app/components/ClothingSuggestion.tsx
 import React from "react";
-import { StyleSheet, View, Image } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { Text, useTheme } from "react-native-paper";
 import { ClothingItem } from "@/types/clothing";
 import useSettingsStore from "@/store/settingsStore";
@@ -30,8 +31,8 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 					{suggestion.image && (
 						<Image
 							source={suggestion.image}
-							style={[styles.icon, { tintColor: theme.colors.onBackground }]}
-							resizeMode="contain"
+							style={[styles.icon, { tintColor: theme.colors.onBackground}]}
+							contentFit="contain"
 						/>
 					)}
 				</>
@@ -51,6 +52,7 @@ const styles = StyleSheet.create({
 	icon: {
 		flex: 1,
 		marginTop: 8,
+		width: '100%',
 	},
 	windText: {
 		marginTop: 4,
