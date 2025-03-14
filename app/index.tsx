@@ -26,6 +26,7 @@ const HomeScreen = () => {
 	const theme = useTheme()
 	const { unit, cutoffs } = useSettingsStore();
 
+	const [options, setOptions] = useState(false);
 	const [location, setLocation] = useState("Boston, Massachusetts");
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [items, setItems] = useState([{ label: "Boston, Massachusetts", value: "Boston, Massachusetts" }, { label: "New York, New York", value: "New York, New York" }, { label: "Los Angeles, California", value: "Los Angeles, California" }]);
@@ -111,8 +112,8 @@ const HomeScreen = () => {
 
 	const filteredWeather = getWeatherTimeOfDay();
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
-	const weather = filteredWeather?.length > 0  ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
-	
+	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
+
 	const feelsLike = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
 
 	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
@@ -128,7 +129,7 @@ const HomeScreen = () => {
 	const uv = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
 	const visibility = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
 
-	const conditionIcon =  day === 0 ? weatherData?.current.condition.icon: weatherData?.forecast.forecastday[day].day.condition.icon;
+	const conditionIcon = day === 0 ? weatherData?.current.condition.icon : weatherData?.forecast.forecastday[day].day.condition.icon;
 	const conditionText = day === 0 ? weatherData?.current.condition.text : weatherData?.forecast.forecastday[day].day.condition.text;
 
 	function getWeightedAvg() {
@@ -226,7 +227,7 @@ const HomeScreen = () => {
 				<Text variant="bodyLarge" style={{ flex: 2 }}>
 					{label}:
 				</Text>
-				<Text variant="bodyLarge" style={{ flex: 1.5 }}>
+				<Text variant="bodyLarge" style={{ flex: 1.5, fontWeight: "bold" }}>
 					{value == 0 && hasZeroValue ? zeroText : textArray[convertToScale(value, cutoffs)]}
 				</Text>
 				<View style={[styles.infoColn, { flex: 2.8 }]}>
@@ -267,106 +268,104 @@ const HomeScreen = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
 			<Appbar.Header>
-				<Appbar.Content title="Minimal Weather" />
+				<Appbar.Content title="Breezy" onPress={()=>setOptions(!options)}/>
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
 				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
 			} >
 				{/* Location picker */}
-				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-					<DropDownPicker
-						listMode="SCROLLVIEW"
-						open={dropdownOpen}
-						setOpen={setDropdownOpen}
-						value={location}
-						searchable
-						items={items.some(item => item.value === location)
-							? items
-							: [{ label: location, value: location }, ...items]}
-						setItems={setItems}
-						setValue={setLocation}
-						onSelectItem={(item) => fetchWeather(item.value)}
-						loading={dropDownLoading}
-						disableLocalSearch={true} // required for remote search
-						onChangeSearchText={(text) => {
-							// Show the loading animation
-							setDropdownLoading(true);
-
-							// Get items from API
-							locationAutocomplete(text)
-								.then((items) => {
-									let newItems = items.map((item) => {
-										let locationString = item.name + ", " + item.region;
-										return { label: locationString, value: locationString }
-									})
-									setItems(newItems);
-								})
-								.catch((err) => {
-									console.error(err);
-								})
-								.finally(() => {
-									// Hide the loading animation
-									setDropdownLoading(false);
-								});
-						}}
-
-						containerStyle={{ flex: 1 }}
-						style={{
-							backgroundColor: theme.colors.elevation.level1, // Paper background color
-							borderColor: theme.colors.outline, // Primary color for border
-						}}
-						textStyle={{
-							color: theme.colors.onSurface, // Adapts to dark mode
-						}}
-						dropDownContainerStyle={{
-							backgroundColor: theme.colors.elevation.level1, // Dropdown background
-							borderColor: theme.colors.outline,
-						}}
-						placeholderStyle={{
-							color: theme.colors.onSurfaceDisabled, // Muted text color
-						}}
-						arrowIconStyle={{
-							tintColor: theme.colors.onSurface, // Arrow color
-						}}
-						listItemLabelStyle={{
-							color: theme.colors.onSurface,
-							fontSize: 16,
-						}}
-						listItemLabelStyleActive={{
-							color: theme.colors.onSurface,
-							fontWeight: "bold",
-						}}
-						tickIconStyle={{
-							tintColor: theme.colors.onSurface,
-						}}
-						// Search bar container
-						searchContainerStyle={{
-							borderBottomColor: theme.colors.outline,
-							borderBottomWidth: 1,
-						}}
-
-						// Search input text
-						searchTextInputStyle={{
-							color: theme.colors.onSurface,
-							borderRadius: theme.roundness,
-							borderColor: theme.colors.outline,
-							fontSize: 16,
-						}}
-						searchPlaceholder="Search location"
-					/>
-					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
-				</View>
-
-				{error && <Text style={styles.errorText}>{error}</Text>}
-
-				{weatherData && weather && (
+				{options &&
 					<>
+						<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+							<DropDownPicker
+								listMode="SCROLLVIEW"
+								open={dropdownOpen}
+								setOpen={setDropdownOpen}
+								value={location}
+								searchable
+								items={items.some(item => item.value === location)
+									? items
+									: [{ label: location, value: location }, ...items]}
+								setItems={setItems}
+								setValue={setLocation}
+								onSelectItem={(item) => fetchWeather(item.value)}
+								loading={dropDownLoading}
+								disableLocalSearch={true} // required for remote search
+								onChangeSearchText={(text) => {
+									// Show the loading animation
+									setDropdownLoading(true);
+
+									// Get items from API
+									locationAutocomplete(text)
+										.then((items) => {
+											let newItems = items.map((item) => {
+												let locationString = item.name + ", " + item.region;
+												return { label: locationString, value: locationString }
+											})
+											setItems(newItems);
+										})
+										.catch((err) => {
+											console.error(err);
+										})
+										.finally(() => {
+											// Hide the loading animation
+											setDropdownLoading(false);
+										});
+								}}
+
+								containerStyle={{ flex: 1 }}
+								style={{
+									backgroundColor: theme.colors.elevation.level1, // Paper background color
+									borderColor: theme.colors.outline, // Primary color for border
+								}}
+								textStyle={{
+									color: theme.colors.onSurface, // Adapts to dark mode
+								}}
+								dropDownContainerStyle={{
+									backgroundColor: theme.colors.elevation.level1, // Dropdown background
+									borderColor: theme.colors.outline,
+								}}
+								placeholderStyle={{
+									color: theme.colors.onSurfaceDisabled, // Muted text color
+								}}
+								arrowIconStyle={{
+									tintColor: theme.colors.onSurface, // Arrow color
+								}}
+								listItemLabelStyle={{
+									color: theme.colors.onSurface,
+									fontSize: 16,
+								}}
+								listItemLabelStyleActive={{
+									color: theme.colors.onSurface,
+									fontWeight: "bold",
+								}}
+								tickIconStyle={{
+									tintColor: theme.colors.onSurface,
+								}}
+								// Search bar container
+								searchContainerStyle={{
+									borderBottomColor: theme.colors.outline,
+									borderBottomWidth: 1,
+								}}
+
+								// Search input text
+								searchTextInputStyle={{
+									color: theme.colors.onSurface,
+									borderRadius: theme.roundness,
+									borderColor: theme.colors.outline,
+									fontSize: 16,
+								}}
+								searchPlaceholder="Search location"
+							/>
+							<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
+						</View>
+
 						<Text variant="headlineMedium" style={styles.locationText}>
 							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 						</Text>
 
-						{/* Time of Day Selector */}
+					{/* Time of Day Selector */}
 						<SegmentedButtons
 							style={{ marginTop: 16, marginBottom: 32 }}
 							value={timeOfDay}
@@ -384,13 +383,19 @@ const HomeScreen = () => {
 									labelLarge: { fontSize: 12 }, // Adjust text size
 								}
 							}}
-						/>
+						/></>}
 
+				{error && <Text style={styles.errorText}>{error}</Text>}
+				{weatherData && weather && (
+					<>
+					<Card style={[styles.weatherCard, { backgroundColor: theme.colors.elevation.level1 }]} elevation={3}>
+						<Card.Content>
 						{/* Clothing Suggestion */}
 						{feelsLike !== undefined && (
-							<View style={{ height: 200 }}>
+							<View style={{ height: 225 }}>
 								<ClothingSuggestion
 									temperature={getWeightedAvg()}
+									textVariant="titleLarge"
 								/>
 							</View>
 						)}
@@ -416,14 +421,15 @@ const HomeScreen = () => {
 								</Text>
 							</View>
 						</View>
-
+						</Card.Content>
+						</Card>
 						{/* Weather Details */}
-						<Card style={[styles.weatherCard, { backgroundColor: theme.colors.elevation.level1 }]} elevation={3}>
+{/* 						
 							<Text variant="titleMedium" style={{ textAlign: "center" }} >
 								Details
 							</Text>
 							<Divider style={{ margin: 16, marginTop: 8 }} />
-							<Card.Content>
+							<Card.Content> */}
 								<InfoRow
 									label="Temp"
 									value={temp}
@@ -521,8 +527,7 @@ const HomeScreen = () => {
 								<Button mode="text" onPress={() => setExpanded(!expanded)}>
 									{expanded ? "Collapse" : "Expand"}
 								</Button>
-							</Card.Content>
-						</Card>
+							
 
 						{/* Hourly Forecast */}
 						<Text variant="titleMedium" style={styles.sectionTitle}>
@@ -562,7 +567,7 @@ const HomeScreen = () => {
 					Next
 				</Button>
 			</View>
-		</View>
+		</View >
 	);
 };
 

@@ -9,10 +9,11 @@ import useSettingsStore from "@/store/settingsStore";
 interface ClothingSuggestionProps {
 	temperature: number; // in correct unit (e.g., already converted to F if user chose imperial)
 	textWidth?: number;
+	textVariant?: string;
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
-	 temperature, textWidth
+	 temperature, textWidth, textVariant = "bodyLarge"
 }) => {
 	const theme = useTheme();
 	const { clothingItems } = useSettingsStore();
@@ -27,7 +28,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 		<View style={styles.container}>
 			{suggestion ? (
 				<>
-					<Text variant="bodyLarge" style={{width:textWidth, textAlign: "center"}} >Suggested: {suggestion.name}</Text>
+					<Text variant={textVariant} style={{width:textWidth, textAlign: "center"}} >Suggested: {suggestion.name}</Text>
 					{suggestion.image && (
 						<Image
 							source={suggestion.image}
