@@ -26,11 +26,11 @@ const SettingsScreen = () => {
   const {
     unit,
     darkMode,
-    cutoffs, 
+    cutoffs,
     clothingItems,
     setUnit,
     setDarkMode,
-    setCutoffs, 
+    setCutoffs,
     setClothingItems
   } = useSettingsStore();
 
@@ -38,6 +38,7 @@ const SettingsScreen = () => {
   const [tempRangeLow, setTempRangeLow] = useState('');
   const [tempRangeHigh, setTempRangeHigh] = useState('');
   const [image, setImage] = useState<string>('');
+  const [tint, setTint] = useState(false);
 
   async function saveUnit(value: UnitType) {
     try {
@@ -46,7 +47,7 @@ const SettingsScreen = () => {
       console.error("Error saving unit", e);
     }
   }
-  
+
   async function saveTheme(value: boolean) {
     try {
       await AsyncStorage.setItem('darkMode', JSON.stringify(value));
@@ -92,16 +93,23 @@ const SettingsScreen = () => {
       name: newClothingName,
       temperatureRange: [Number(tempRangeLow), Number(tempRangeHigh)],
       image: image,
+      tint: tint
     }]
+    newClothingItems.sort((a, b) => a.temperatureRange[1] - b.temperatureRange[1]);
     setClothingItems(newClothingItems);
     saveClothingItems(newClothingItems);
+
+    setImage('');
     setNewClothingName('');
     setTempRangeLow('');
     setTempRangeHigh('');
+    setTint(false);
   };
 
   function removeClothingItem(name: string) {
-    setClothingItems(clothingItems.filter((item) => item.name !== name));
+    let newClothingItems = clothingItems.filter((item) => item.name !== name)
+    setClothingItems(newClothingItems);
+    saveClothingItems(newClothingItems);
   }
 
   return (
@@ -116,21 +124,21 @@ const SettingsScreen = () => {
         {/* Toggle dark mode */}
         <View style={styles.row}>
           <Text variant="bodyLarge">Dark Mode</Text>
-          <Switch value={darkMode} onValueChange={(value) => {setDarkMode(value); saveTheme(value)}} />
+          <Switch value={darkMode} onValueChange={(value) => { setDarkMode(value); saveTheme(value) }} />
         </View>
 
         <Divider style={styles.divider} />
 
         {/* Unit */}
         <Text variant="bodyLarge">Units</Text>
-        <RadioButton.Group onValueChange={(value) => {setUnit(value as UnitType);saveUnit(value as UnitType)}} value={unit}>
+        <RadioButton.Group onValueChange={(value) => { setUnit(value as UnitType); saveUnit(value as UnitType) }} value={unit}>
           <RadioButton.Item label="Imperial (F)" value="imperial" />
           <RadioButton.Item label="Metric (C)" value="metric" />
         </RadioButton.Group>
         <Divider style={styles.divider} />
 
         {/* Edit Cutoffs */}
-        <Text variant="bodyLarge">Upper Limit Cutoffs</Text>
+        <Text variant="bodyLarge">Upper Limit Cutoffs (Imperial)</Text>
         {Object.entries(cutoffs).map(([key, values]: [string, number[]]) => (
           <View key={key} style={styles.cutoffsRow}>
             <Text variant="bodyMedium" style={{ flex: 1 }}>
@@ -146,7 +154,7 @@ const SettingsScreen = () => {
                     newValues[i] = parseInt(text);
                     setCutoffs({ ...cutoffs, [key]: newValues });
                   }}
-                  onEndEditing={()=>saveCutoffs}
+                  onEndEditing={() => saveCutoffs}
                   mode="outlined"
                   keyboardType="numeric"
                   style={{ flex: 1, marginHorizontal: 4 }}
@@ -159,7 +167,7 @@ const SettingsScreen = () => {
 
         {/* Clothing Items */}
         <Text variant="bodyLarge" style={styles.sectionTitle}>
-          Clothing Items
+          Clothing Items (Temp in °F)
         </Text>
         {clothingItems.map((item) => (
           <View key={item.name} style={styles.row}>
@@ -170,9 +178,15 @@ const SettingsScreen = () => {
           </View>
         ))}
         <View style={styles.row}>
-          <TouchableOpacity onPress={pickImage}>
-            <Image source={{ uri: image }} style={{ height: 120, aspectRatio: 1, margin: 16, backgroundColor: theme.colors.elevation.level2 }} />
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity onPress={pickImage}>
+              <Image source={{ uri: image }} style={{ height: 120, aspectRatio: 1, marginHorizontal: 16, marginTop:16, backgroundColor: theme.colors.elevation.level2 }} />
+            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "center" }}>
+              <Text variant="bodyLarge">Tint</Text>
+              <Switch value={tint} onValueChange={setTint} />
+            </View>
+          </View>
           <View style={{ flex: 4 }}>
             <TextInput
               label="Clothing Name"

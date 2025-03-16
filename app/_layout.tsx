@@ -59,7 +59,7 @@ const Layout = () => {
 	}
 
 	async function resetAsyncStorage() {
-		await AsyncStorage.removeItem("cutoffs");
+		await AsyncStorage.removeItem("clothing");
 	}
 
 	useEffect(() => {

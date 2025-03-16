@@ -224,10 +224,19 @@ const HomeScreen = () => {
 	}) => {
 		return (
 			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2 }}>
+				<Text variant="bodyLarge" style={{ flex: 2}}>
 					{label}:
 				</Text>
-				<Text variant="bodyLarge" style={{ flex: 1.5, fontWeight: "bold" }}>
+				<Text
+					variant="bodyLarge"
+					style={{
+						flex: 1.5,
+						// color: ["blue", "lightblue", "orange", "orangered", "red"][
+						// 	convertToScale(value, cutoffs)
+						// ],
+						fontWeight: "bold"  
+					}}
+				>
 					{value == 0 && hasZeroValue ? zeroText : textArray[convertToScale(value, cutoffs)]}
 				</Text>
 				<View style={[styles.infoColn, { flex: 2.8 }]}>
@@ -268,16 +277,14 @@ const HomeScreen = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
 			<Appbar.Header>
-				<Appbar.Content title="Breezy" onPress={()=>setOptions(!options)}/>
+				<Appbar.Content title="Breezy" onPress={() => setOptions(!options)} />
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
 				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
 			} >
 				{/* Location picker */}
-				{options &&
-					<>
-						<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
 							<DropDownPicker
 								listMode="SCROLLVIEW"
 								open={dropdownOpen}
@@ -360,47 +367,43 @@ const HomeScreen = () => {
 							/>
 							<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
 						</View>
+				<Text variant="headlineMedium" style={{textAlign: "center"}}>
+					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
+				</Text>
 
-						<Text variant="headlineMedium" style={styles.locationText}>
-							{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
-						</Text>
-
-					{/* Time of Day Selector */}
-						<SegmentedButtons
-							style={{ marginTop: 16, marginBottom: 32 }}
-							value={timeOfDay}
-							onValueChange={(value) => setTimeOfDay(value)}
-							buttons={[
-								{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7, }, // 12 am - 7 am
-								{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 }, // 7 am - 11 am
-								{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 }, // 11 am - 3 pm
-								{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 }, // 3 pm - 8 pm
-								{ value: 'night', label: 'Night' }, // 8 pm - 12 am
-							]}
-							multiSelect
-							theme={{
-								fonts: {
-									labelLarge: { fontSize: 12 }, // Adjust text size
-								}
-							}}
-						/></>}
-
+				{/* Time of Day Selector */}
+				<SegmentedButtons
+					style={{ marginTop: 16, marginBottom: 32 }}
+					value={timeOfDay}
+					onValueChange={(value) => setTimeOfDay(value)}
+					buttons={[
+						{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7, }, // 12 am - 7 am
+						{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 }, // 7 am - 11 am
+						{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 }, // 11 am - 3 pm
+						{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 }, // 3 pm - 8 pm
+						{ value: 'night', label: 'Night' }, // 8 pm - 12 am
+					]}
+					multiSelect
+					theme={{
+						fonts: {
+							labelLarge: { fontSize: 12 }, // Adjust text size
+						}
+					}}
+				/>
 				{error && <Text style={styles.errorText}>{error}</Text>}
 				{weatherData && weather && (
 					<>
-					<Card style={[styles.weatherCard, { backgroundColor: theme.colors.elevation.level1 }]} elevation={3}>
-						<Card.Content>
-						{/* Clothing Suggestion */}
-						{feelsLike !== undefined && (
-							<View style={{ height: 225 }}>
-								<ClothingSuggestion
-									temperature={getWeightedAvg()}
-									textVariant="titleLarge"
-								/>
-							</View>
-						)}
-						<View style={styles.weatherCard}>
-
+						<Card style={[styles.weatherCard, { backgroundColor: theme.colors.elevation.level1, paddingBottom: 0, marginBottom: 16 }]} elevation={0}>
+							{/* <Card.Content> */}
+							{/* Clothing Suggestion */}
+							{feelsLike !== undefined && (
+								<View style={{ height: 200 }}>
+									<ClothingSuggestion
+										temperature={getWeightedAvg()}
+										textVariant="titleLarge"
+									/>
+								</View>
+							)}
 							<InfoRow
 								label="Overall"
 								value={feelsLike}
@@ -420,114 +423,113 @@ const HomeScreen = () => {
 									{conditionText}
 								</Text>
 							</View>
-						</View>
-						</Card.Content>
+							{/* </Card.Content> */}
 						</Card>
 						{/* Weather Details */}
-{/* 						
+						<View style={{ padding: 16 }}>
 							<Text variant="titleMedium" style={{ textAlign: "center" }} >
 								Details
 							</Text>
 							<Divider style={{ margin: 16, marginTop: 8 }} />
-							<Card.Content> */}
+							{/* <Card.Content> */}
+							<InfoRow
+								label="Temp"
+								value={temp}
+								cutoffs={tempCutoffs}
+								textArray={["freezing", "cold", "mild", "warm", "hot"]}
+								imperialUnit="°F"
+								metricUnit="°C"
+							/>
+							<InfoRow
+								label="Wind"
+								value={wind}
+								cutoffs={windCutoffs}
+								textArray={windLabels}
+								imperialUnit="mph"
+								metricUnit="kph"
+							/>
+							{day == 0 && windGusts > wind + 10 ?
 								<InfoRow
-									label="Temp"
-									value={temp}
-									cutoffs={tempCutoffs}
-									textArray={["freezing", "cold", "mild", "warm", "hot"]}
-									imperialUnit="°F"
-									metricUnit="°C"
-								/>
-								<InfoRow
-									label="Wind"
-									value={wind}
+									label="Wind Gusts"
+									value={windGusts}
 									cutoffs={windCutoffs}
 									textArray={windLabels}
 									imperialUnit="mph"
-									metricUnit="kph"
-								/>
-								{day == 0 && windGusts > wind + 10 ?
-									<InfoRow
-										label="Wind Gusts"
-										value={windGusts}
-										cutoffs={windCutoffs}
-										textArray={windLabels}
-										imperialUnit="mph"
-										metricUnit="kph" /> : null}
+									metricUnit="kph" /> : null}
+							<InfoRow
+								label="Precip"
+								value={precipProb}
+								cutoffs={precipProbCutoffs}
+								textArray={["unlikely", "possible", "likely"]}
+								imperialUnit="%"
+								metricUnit="%"
+								hasZeroValue={!weatherData?.forecast.forecastday[day].day.daily_will_it_rain && !weatherData?.forecast.forecastday[day].day.daily_will_it_snow}
+								zeroText="none" />
+							{precipProb > 0 ?
 								<InfoRow
-									label="Precip"
-									value={precipProb}
-									cutoffs={precipProbCutoffs}
-									textArray={["unlikely", "possible", "likely"]}
-									imperialUnit="%"
-									metricUnit="%"
-									hasZeroValue={!weatherData?.forecast.forecastday[day].day.daily_will_it_rain && !weatherData?.forecast.forecastday[day].day.daily_will_it_snow}
-									zeroText="none" />
-								{precipProb > 0 ?
-									<InfoRow
-										label={temp < 32 ? "Snow" : "Rain"}
-										value={precip}
-										cutoffs={precipCutoffs}
-										textArray={["drizzle", "shower", "downpour"]}
-										imperialUnit="in"
-										metricUnit="cm"
-									/> : null}
-								{temp > 60 || expanded ? <InfoRow
-									label="Humidity"
-									value={humidity}
-									cutoffs={humidityCutoffs}
-									textArray={["dry", "comfort", "sticky"]}
-									imperialUnit="%"
-									metricUnit="%"
+									label={temp < 32 ? "Snow" : "Rain"}
+									value={precip}
+									cutoffs={precipCutoffs}
+									textArray={["drizzle", "shower", "downpour"]}
+									imperialUnit="in"
+									metricUnit="cm"
 								/> : null}
-								{expanded ?
-									<>
+							{temp > 60 || expanded ? <InfoRow
+								label="Humidity"
+								value={humidity}
+								cutoffs={humidityCutoffs}
+								textArray={["dry", "comfort", "sticky"]}
+								imperialUnit="%"
+								metricUnit="%"
+							/> : null}
+							{expanded ?
+								<>
+									<InfoRow
+										label="UV Index"
+										value={uv}
+										cutoffs={uvCutoffs}
+										textArray={["safe", "caution", "danger"]}
+										imperialUnit=""
+										metricUnit="" />
+									<InfoRow
+										label="Visibility"
+										value={visibility}
+										cutoffs={visibilityCutoffs}
+										textArray={["foggy", "misty", "clear"]}
+										imperialUnit="mi"
+										metricUnit="km"
+									/>
+									{day == 0 ?
 										<InfoRow
-											label="UV Index"
-											value={uv}
-											cutoffs={uvCutoffs}
-											textArray={["safe", "caution", "danger"]}
-											imperialUnit=""
-											metricUnit="" />
+											label="Cloud Cover"
+											value={cloudCover}
+											cutoffs={cloudCoverCutoffs}
+											textArray={["clear", "cloudy", "overcast"]}
+											imperialUnit="%"
+											metricUnit="%" />
+										: null}
+									{day == 0 && windGusts <= wind + 10 ?
 										<InfoRow
-											label="Visibility"
-											value={visibility}
-											cutoffs={visibilityCutoffs}
-											textArray={["foggy", "misty", "clear"]}
-											imperialUnit="mi"
-											metricUnit="km"
-										/>
-										{day == 0 ?
-											<InfoRow
-												label="Cloud Cover"
-												value={cloudCover}
-												cutoffs={cloudCoverCutoffs}
-												textArray={["clear", "cloudy", "overcast"]}
-												imperialUnit="%"
-												metricUnit="%" />
-											: null}
-										{day == 0 && windGusts <= wind + 10 ?
-											<InfoRow
-												label="Wind Gusts"
-												value={windGusts ? windGusts : wind}
-												cutoffs={windCutoffs}
-												textArray={windLabels}
-												imperialUnit="mph"
-												metricUnit="kph" />
-											: null}
-										<TextRow
-											label="Sunrise"
-											value={weatherData.forecast.forecastday[day].astro.sunrise}
-										/>
-										<TextRow
-											label="Sunset"
-											value={weatherData.forecast.forecastday[day].astro.sunset}
-										/>
-									</> : null}
-								<Button mode="text" onPress={() => setExpanded(!expanded)}>
-									{expanded ? "Collapse" : "Expand"}
-								</Button>
-							
+											label="Wind Gusts"
+											value={windGusts ? windGusts : wind}
+											cutoffs={windCutoffs}
+											textArray={windLabels}
+											imperialUnit="mph"
+											metricUnit="kph" />
+										: null}
+									<TextRow
+										label="Sunrise"
+										value={weatherData.forecast.forecastday[day].astro.sunrise}
+									/>
+									<TextRow
+										label="Sunset"
+										value={weatherData.forecast.forecastday[day].astro.sunset}
+									/>
+								</> : null}
+							<Button onPress={() => setExpanded(!expanded)} style={{alignSelf: "center"}}>
+								{expanded ? "Collapse" : "Expand"}
+							</Button>
+						</View>
 
 						{/* Hourly Forecast */}
 						<Text variant="titleMedium" style={styles.sectionTitle}>
@@ -584,10 +586,6 @@ const styles = StyleSheet.create({
 	},
 	button: {
 		marginBottom: 16,
-	},
-	locationText: {
-		marginTop: 16,
-		textAlign: "center",
 	},
 	link: {
 		marginTop: 24,

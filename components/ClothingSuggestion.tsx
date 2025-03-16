@@ -28,11 +28,16 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 		<View style={styles.container}>
 			{suggestion ? (
 				<>
-					<Text variant={textVariant} style={{width:textWidth, textAlign: "center"}} >Suggested: {suggestion.name}</Text>
+					<Text variant={textVariant} style={{ width: textWidth, textAlign: "center" }}>
+						Suggested: {suggestion.name}
+					</Text>
 					{suggestion.image && (
 						<Image
 							source={suggestion.image}
-							style={[styles.icon, { tintColor: theme.colors.onBackground}]}
+							style={[
+								styles.icon,
+								suggestion.tint && { tintColor: theme.colors.onBackground }
+							]}
 							contentFit="contain"
 						/>
 					)}

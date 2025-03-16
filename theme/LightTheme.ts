@@ -4,7 +4,7 @@ const LightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#6200ee',
+    primary: '#6C63FF',
     background: '#ffffff',
     surface: '#ffffff',
     onPrimary: '#ffffff',

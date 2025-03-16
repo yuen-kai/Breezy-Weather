@@ -43,13 +43,12 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		alignItems: "center",
 		marginHorizontal: 10,
-		flex:1,
 	},
 	box: {
 		flex: 1,
-		// height: 20,
-		margin: 1,
+		// height: 27,
 		aspectRatio: 1,
+		margin: 1,
 		backgroundColor: "lightgray",
 	},
 	highlightedBox: {
