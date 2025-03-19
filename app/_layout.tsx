@@ -17,7 +17,8 @@ const Layout = () => {
 		setUnit,
 		setDarkMode,
 		setCutoffs,
-		setClothingItems
+		setClothingItems,
+		setTimeOfDay
 	} = useSettingsStore();
 
 
@@ -58,14 +59,22 @@ const Layout = () => {
 		}
 	}
 
-	async function resetAsyncStorage() {
-		await AsyncStorage.removeItem("clothing");
+	function getTimeOfDay() {
+		const h = new Date().getHours();
+		if (h >= 20 && h < 24) return ["night"];
+		let tempTimeOfDay = [];
+		if (h < 7) tempTimeOfDay.push("earlyMorning");
+		if (h < 11) tempTimeOfDay.push("morning");
+		if (h < 15) tempTimeOfDay.push("noon");
+		if (h < 20) tempTimeOfDay.push("evening");
+		return tempTimeOfDay;
 	}
 
 	useEffect(() => {
 		if (!initial) return
 		initial = false
 		getSettings();
+		setTimeOfDay(getTimeOfDay());
 	}, []);
 
 

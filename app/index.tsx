@@ -21,10 +21,12 @@ import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
 
+let first = true;
+
 const HomeScreen = () => {
 	//States
 	const theme = useTheme()
-	const { unit, cutoffs } = useSettingsStore();
+	const { unit, cutoffs, timeOfDay, setTimeOfDay } = useSettingsStore();
 
 	const [options, setOptions] = useState(false);
 	const [location, setLocation] = useState("Boston, Massachusetts");
@@ -33,7 +35,6 @@ const HomeScreen = () => {
 	const [dropDownLoading, setDropdownLoading] = useState(false);
 
 	const [refreshing, setRefreshing] = useState(false);
-	const [timeOfDay, setTimeOfDay] = useState<string[]>(getTimeOfDay);
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const [day, setDay] = useState<number>(0);
 
@@ -41,20 +42,7 @@ const HomeScreen = () => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	//Setup (settings, time of day, location, weather data)
-
-
-	function getTimeOfDay() {
-		const h = new Date().getHours();
-		if (h >= 20 && h < 24) return ["night"];
-		let tempTimeOfDay = [];
-		if (h < 7) tempTimeOfDay.push("earlyMorning");
-		if (h < 11) tempTimeOfDay.push("morning");
-		if (h < 15) tempTimeOfDay.push("noon");
-		if (h < 20) tempTimeOfDay.push("evening");
-		return tempTimeOfDay;
-	}
-
+	//Setup (settings, location, weather data)
 
 	const fetchWeather = async (location: string) => {
 		if (loading) return;
@@ -114,28 +102,69 @@ const HomeScreen = () => {
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
 	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
 
-	const feelsLike = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.feelslike_f, 0) / weather?.length : weather[0]?.avgtemp_f;
+	const feelsLike = !dailyWeather ? getAverage(weather?.map(curr => curr?.feelslike_f)) : weather[0]?.avgtemp_f;
 
-	const minTemp = weatherData?.forecast.forecastday[day].day.mintemp_f;
-	const maxTemp = weatherData?.forecast.forecastday[day].day.maxtemp_f;
-	const temp = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.temp_f, 0) / weather?.length : weather[0]?.avgtemp_f;
-	const wind = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.wind_mph, 0) / weather?.length : weather[0]?.maxwind_mph;
-	const precipProb = filteredWeather?.length > 0 ? weather?.reduce((acc, curr) => acc + curr?.chance_of_rain, 0) / weather?.length : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
-	const precip = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.precip_in, 0) / weather?.length : weather[0]?.totalprecip_in;
+	const temp = !dailyWeather ? getAverage(weather?.map(curr => curr?.temp_f)) : weather[0]?.avgtemp_f;
+	const wind = !dailyWeather ? weightWind(weather?.map(curr => curr?.wind_mph)) : weather[0]?.maxwind_mph;
+	const precipProb = filteredWeather?.length > 0 ? weightPrecip(weather?.map(curr => curr?.chance_of_rain)) : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
+	const precip = !dailyWeather ? getAverage(weather?.map(curr => curr?.precip_in).filter(v => v > 0)) : weather[0]?.totalprecip_in;
 
-	const humidity = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.humidity, 0) / weather?.length : weather[0]?.avghumidity;
+	const humidity = !dailyWeather ? getAverage(weather?.map(curr => curr?.humidity)) : weather[0]?.avghumidity;
 	const cloudCover = day === 0 ? weatherData?.current.cloud : 50;
 	const windGusts = day === 0 ? weatherData?.current.gust_mph : wind;
-	const uv = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.uv, 0) / weather?.length : weather[0]?.uv;
-	const visibility = !dailyWeather ? weather?.reduce((acc, curr) => acc + curr?.vis_miles, 0) / weather?.length : weather[0]?.avgvis_miles;
+	const uv = !dailyWeather ? getAverage(weather?.map(curr => curr?.uv)) : weather[0]?.uv;
+	const visibility = !dailyWeather ? weightVisibility(weather?.map(curr => curr?.vis_miles)) : weather[0]?.avgvis_miles;
 
 	const conditionIcon = day === 0 ? weatherData?.current.condition.icon : weatherData?.forecast.forecastday[day].day.condition.icon;
 	const conditionText = day === 0 ? weatherData?.current.condition.text : weatherData?.forecast.forecastday[day].day.condition.text;
 
-	function getWeightedAvg() {
-		if (dailyWeather) return feelsLike;
-		const weightedSum = weather?.reduce((acc, curr) => acc + curr?.feelslike_f * Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
-		const totalWeight = weather?.reduce((acc, curr) => acc + Math.max(0.3 * (feelsLike - curr?.temp_f), 1), 0);
+	function getAverage(values: number[]): number {
+		if (!values || values.length === 0) return 0;
+		return values.reduce((a, b) => a + b) / values.length;
+	}
+
+	function weightVisibility(vis: number[]): number {
+		if (!vis || vis.length === 0) return 0;
+		// Sort values from lowest to highest (favor lower visibility)
+		const sorted = [...vis].sort((a, b) => a - b);
+		// Apply weighted average with more weight to lower values
+		let totalWeight = 0;
+		let weightedSum = 0;
+		sorted.forEach((value, index) => {
+			const weight = 2 ** (sorted.length - index);
+			weightedSum += value * weight;
+			totalWeight += weight;
+		});
+		return weightedSum / totalWeight;
+	}
+
+	function weightWind(winds: number[]): number {
+		if (!winds || winds.length === 0) return 0;
+		// Sort values from highest to lowest (favor higher wind)
+		const sorted = [...winds].sort((a, b) => b - a);
+		// Apply weighted average with more weight to higher values
+		let totalWeight = 0;
+		let weightedSum = 0;
+		sorted.forEach((value, index) => {
+			const weight = 2 **(sorted.length - index);
+			weightedSum += value * weight;
+			totalWeight += weight;
+		});
+		return weightedSum / totalWeight;
+	}
+
+	function weightPrecip(precips: number[]): number {
+		if (!precips || precips.length === 0) return 0;
+		// Sort values from highest to lowest (favor higher precipitation)
+		const sorted = [...precips].sort((a, b) => b - a);
+		// Apply weighted average with more weight to higher values
+		let totalWeight = 0;
+		let weightedSum = 0;
+		sorted.forEach((value, index) => {
+			const weight = 1.5 ** (sorted.length - index);
+			weightedSum += value * weight;
+			totalWeight += weight;
+		});
 		return weightedSum / totalWeight;
 	}
 
@@ -198,7 +227,7 @@ const HomeScreen = () => {
 				break;
 		}
 		if (value > 10) return Math.round(value);
-		return value?.toPrecision(2);
+		return value.toPrecision(2);
 	}
 
 	interface InfoRowProps {
@@ -222,31 +251,43 @@ const HomeScreen = () => {
 		hasZeroValue,
 		zeroText
 	}) => {
+		// // Determine min and max values based on weather data
+		// let minValue = 0;
+		// let maxValue = 0;
+		// if (label === "Overall") {
+		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.avgtemp_f));
+		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.avgtemp_f));
+		// } else if (label === "Temp") {
+		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.mintemp_f));
+		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.maxtemp_f));
+		// } else if (label === "Wind") {
+		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.minwind_mph));
+		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.maxwind_mph));
+		// } else if (label === "Precip") {
+		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.totalprecip_in));
+		// }
+
+		// // Calculate indices based on min and max values
+		// const minBoxIndex = cutoffs.findIndex(cutoff => cutoff >= minValue);
+		// const maxBoxIndex = cutoffs.findIndex(cutoff => cutoff >= maxValue);
+
+		let selectedIndex = convertToScale(value, cutoffs);
 		return (
 			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2}}>
-					{label}:
-				</Text>
-				<Text
-					variant="bodyLarge"
-					style={{
-						flex: 1.5,
-						// color: ["blue", "lightblue", "orange", "orangered", "red"][
-						// 	convertToScale(value, cutoffs)
-						// ],
-						fontWeight: "bold"  
-					}}
-				>
-					{value == 0 && hasZeroValue ? zeroText : textArray[convertToScale(value, cutoffs)]}
+				<Text variant="bodyLarge" style={{ flex: 2 }}>{label}:</Text>
+				<Text variant="bodyLarge" style={{ flex: 1.5, fontWeight: "bold" }}>
+					{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
 				</Text>
 				<View style={[styles.infoColn, { flex: 2.8 }]}>
 					<BoxRow
 						numBoxes={cutoffs.length}
-						selectedBox={value == 0 && hasZeroValue ? -1 : convertToScale(value, cutoffs)}
+						selectedBox={value == 0 && hasZeroValue ? -1 : selectedIndex}
+						// minBox={selectedIndex - 1}
+						// maxBox={selectedIndex + 1}
 					/>
 					<Text variant="labelSmall">
-						{roundWeatherValue(label, value)}{" "}
-						{unit === "imperial" ? imperialUnit : metricUnit}
+						{roundWeatherValue(label, value)}{
+							unit === "imperial" ? imperialUnit : metricUnit}
 					</Text>
 				</View>
 			</View>
@@ -284,90 +325,90 @@ const HomeScreen = () => {
 				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
 			} >
 				{/* Location picker */}
-						<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
-							<DropDownPicker
-								listMode="SCROLLVIEW"
-								open={dropdownOpen}
-								setOpen={setDropdownOpen}
-								value={location}
-								searchable
-								items={items.some(item => item.value === location)
-									? items
-									: [{ label: location, value: location }, ...items]}
-								setItems={setItems}
-								setValue={setLocation}
-								onSelectItem={(item) => fetchWeather(item.value)}
-								loading={dropDownLoading}
-								disableLocalSearch={true} // required for remote search
-								onChangeSearchText={(text) => {
-									// Show the loading animation
-									setDropdownLoading(true);
+				<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+					<DropDownPicker
+						listMode="SCROLLVIEW"
+						open={dropdownOpen}
+						setOpen={setDropdownOpen}
+						value={location}
+						searchable
+						items={items.some(item => item.value === location)
+							? items
+							: [{ label: location, value: location }, ...items]}
+						setItems={setItems}
+						setValue={setLocation}
+						onSelectItem={(item) => fetchWeather(item.value)}
+						loading={dropDownLoading}
+						disableLocalSearch={true} // required for remote search
+						onChangeSearchText={(text) => {
+							// Show the loading animation
+							setDropdownLoading(true);
 
-									// Get items from API
-									locationAutocomplete(text)
-										.then((items) => {
-											let newItems = items.map((item) => {
-												let locationString = item.name + ", " + item.region;
-												return { label: locationString, value: locationString }
-											})
-											setItems(newItems);
-										})
-										.catch((err) => {
-											console.error(err);
-										})
-										.finally(() => {
-											// Hide the loading animation
-											setDropdownLoading(false);
-										});
-								}}
+							// Get items from API
+							locationAutocomplete(text)
+								.then((items) => {
+									let newItems = items.map((item) => {
+										let locationString = item.name + ", " + item.region;
+										return { label: locationString, value: locationString }
+									})
+									setItems(newItems);
+								})
+								.catch((err) => {
+									console.error(err);
+								})
+								.finally(() => {
+									// Hide the loading animation
+									setDropdownLoading(false);
+								});
+						}}
 
-								containerStyle={{ flex: 1 }}
-								style={{
-									backgroundColor: theme.colors.elevation.level1, // Paper background color
-									borderColor: theme.colors.outline, // Primary color for border
-								}}
-								textStyle={{
-									color: theme.colors.onSurface, // Adapts to dark mode
-								}}
-								dropDownContainerStyle={{
-									backgroundColor: theme.colors.elevation.level1, // Dropdown background
-									borderColor: theme.colors.outline,
-								}}
-								placeholderStyle={{
-									color: theme.colors.onSurfaceDisabled, // Muted text color
-								}}
-								arrowIconStyle={{
-									tintColor: theme.colors.onSurface, // Arrow color
-								}}
-								listItemLabelStyle={{
-									color: theme.colors.onSurface,
-									fontSize: 16,
-								}}
-								listItemLabelStyleActive={{
-									color: theme.colors.onSurface,
-									fontWeight: "bold",
-								}}
-								tickIconStyle={{
-									tintColor: theme.colors.onSurface,
-								}}
-								// Search bar container
-								searchContainerStyle={{
-									borderBottomColor: theme.colors.outline,
-									borderBottomWidth: 1,
-								}}
+						containerStyle={{ flex: 1 }}
+						style={{
+							backgroundColor: theme.colors.elevation.level1, // Paper background color
+							borderColor: theme.colors.outline, // Primary color for border
+						}}
+						textStyle={{
+							color: theme.colors.onSurface, // Adapts to dark mode
+						}}
+						dropDownContainerStyle={{
+							backgroundColor: theme.colors.elevation.level1, // Dropdown background
+							borderColor: theme.colors.outline,
+						}}
+						placeholderStyle={{
+							color: theme.colors.onSurfaceDisabled, // Muted text color
+						}}
+						arrowIconStyle={{
+							tintColor: theme.colors.onSurface, // Arrow color
+						}}
+						listItemLabelStyle={{
+							color: theme.colors.onSurface,
+							fontSize: 16,
+						}}
+						listItemLabelStyleActive={{
+							color: theme.colors.onSurface,
+							fontWeight: "bold",
+						}}
+						tickIconStyle={{
+							tintColor: theme.colors.onSurface,
+						}}
+						// Search bar container
+						searchContainerStyle={{
+							borderBottomColor: theme.colors.outline,
+							borderBottomWidth: 1,
+						}}
 
-								// Search input text
-								searchTextInputStyle={{
-									color: theme.colors.onSurface,
-									borderRadius: theme.roundness,
-									borderColor: theme.colors.outline,
-									fontSize: 16,
-								}}
-								searchPlaceholder="Search location"
-							/>
-							<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
-						</View>
-				<Text variant="headlineMedium" style={{textAlign: "center"}}>
+						// Search input text
+						searchTextInputStyle={{
+							color: theme.colors.onSurface,
+							borderRadius: theme.roundness,
+							borderColor: theme.colors.outline,
+							fontSize: 16,
+						}}
+						searchPlaceholder="Search location"
+					/>
+					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
+				</View>
+				<Text variant="headlineMedium" style={{ textAlign: "center" }}>
 					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 				</Text>
 
@@ -399,7 +440,7 @@ const HomeScreen = () => {
 							{feelsLike !== undefined && (
 								<View style={{ height: 200 }}>
 									<ClothingSuggestion
-										temperature={getWeightedAvg()}
+										temperature={feelsLike}
 										textVariant="titleLarge"
 									/>
 								</View>
@@ -526,7 +567,7 @@ const HomeScreen = () => {
 										value={weatherData.forecast.forecastday[day].astro.sunset}
 									/>
 								</> : null}
-							<Button onPress={() => setExpanded(!expanded)} style={{alignSelf: "center"}}>
+							<Button onPress={() => setExpanded(!expanded)} style={{ alignSelf: "center" }}>
 								{expanded ? "Collapse" : "Expand"}
 							</Button>
 						</View>

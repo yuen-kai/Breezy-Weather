@@ -5,12 +5,16 @@ import { Card } from "react-native-paper";
 interface BoxRowProps {
 	numBoxes: number;
 	selectedBox: number;
+	minBox?: number;
+	maxBox?: number;
 	containerStyle?: object;
 }
 
 const BoxRow: React.FC<BoxRowProps> = ({
 	numBoxes,
 	selectedBox,
+	minBox,
+	maxBox,
 	containerStyle,
 }) => {
 	return (
@@ -20,6 +24,8 @@ const BoxRow: React.FC<BoxRowProps> = ({
 					<View
 						style={[
 							styles.box,
+							index === minBox && styles.minBox, // Apply min value style
+							index === maxBox && styles.maxBox, // Apply max value style
 							index <= selectedBox && styles.highlightedBox, // Apply highlight style
 						]}
 					/>
@@ -53,6 +59,16 @@ const styles = StyleSheet.create({
 	},
 	highlightedBox: {
 		backgroundColor: "#007AFF",
+	},
+	minBox: {
+		backgroundColor: "lightblue", // Green color for minimum value
+		borderWidth: 2,
+		borderColor: "#fff",
+	},
+	maxBox: {
+		backgroundColor: "lightblue", // Red color for maximum value
+		borderWidth: 2,
+		borderColor: "#fff",
 	},
 });
 
