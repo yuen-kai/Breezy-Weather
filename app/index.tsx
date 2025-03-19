@@ -39,22 +39,17 @@ const HomeScreen = () => {
 	const [day, setDay] = useState<number>(0);
 
 	const [weatherData, setWeatherData] = useState<WeatherApiResponse | null>(null);
-	const [loading, setLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
 	//Setup (settings, location, weather data)
 
 	const fetchWeather = async (location: string) => {
-		if (loading) return;
-		setLoading(true);
 		setError(null);
 		try {
 			const data = await getWeatherData(location);
 			setWeatherData(data);
 		} catch (err) {
 			setError((err as Error).message);
-		} finally {
-			setLoading(false);
 		}
 	};
 
@@ -65,7 +60,6 @@ const HomeScreen = () => {
 			Alert.alert('Permission to access location was denied');
 			return;
 		}
-
 		let location = (await Location.getCurrentPositionAsync()).coords;
 		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
 		setLocation(locations[0].name + ", " + locations[0].region);
@@ -74,7 +68,7 @@ const HomeScreen = () => {
 
 	//runs whenever screen is loaded
 	useEffect(() => {
-		fetchWeather(location);
+		fetchWeather(location); // fetch weather data so don't have to wait for location
 		getCurrentLocation();
 
 		const intervalId = setInterval(() => {
@@ -146,7 +140,7 @@ const HomeScreen = () => {
 		let totalWeight = 0;
 		let weightedSum = 0;
 		sorted.forEach((value, index) => {
-			const weight = 2 **(sorted.length - index);
+			const weight = 2 ** (sorted.length - index);
 			weightedSum += value * weight;
 			totalWeight += weight;
 		});
@@ -226,6 +220,8 @@ const HomeScreen = () => {
 			default:
 				break;
 		}
+
+		// Round to max precision 2
 		if (value > 10) return Math.round(value);
 		return value.toPrecision(2);
 	}
@@ -282,8 +278,8 @@ const HomeScreen = () => {
 					<BoxRow
 						numBoxes={cutoffs.length}
 						selectedBox={value == 0 && hasZeroValue ? -1 : selectedIndex}
-						// minBox={selectedIndex - 1}
-						// maxBox={selectedIndex + 1}
+					// minBox={selectedIndex - 1}
+					// maxBox={selectedIndex + 1}
 					/>
 					<Text variant="labelSmall">
 						{roundWeatherValue(label, value)}{
@@ -450,8 +446,8 @@ const HomeScreen = () => {
 								value={feelsLike}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
-								imperialUnit="°F"
-								metricUnit="°C"
+								imperialUnit=" °F"
+								metricUnit=" °C"
 							/>
 
 							<View style={styles.conditionRow}>
@@ -478,16 +474,16 @@ const HomeScreen = () => {
 								value={temp}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
-								imperialUnit="°F"
-								metricUnit="°C"
+								imperialUnit=" °F"
+								metricUnit=" °C"
 							/>
 							<InfoRow
 								label="Wind"
 								value={wind}
 								cutoffs={windCutoffs}
 								textArray={windLabels}
-								imperialUnit="mph"
-								metricUnit="kph"
+								imperialUnit=" mph"
+								metricUnit=" kph"
 							/>
 							{day == 0 && windGusts > wind + 10 ?
 								<InfoRow
@@ -495,8 +491,8 @@ const HomeScreen = () => {
 									value={windGusts}
 									cutoffs={windCutoffs}
 									textArray={windLabels}
-									imperialUnit="mph"
-									metricUnit="kph" /> : null}
+									imperialUnit=" mph"
+									metricUnit=" kph" /> : null}
 							<InfoRow
 								label="Precip"
 								value={precipProb}
@@ -512,8 +508,8 @@ const HomeScreen = () => {
 									value={precip}
 									cutoffs={precipCutoffs}
 									textArray={["drizzle", "shower", "downpour"]}
-									imperialUnit="in"
-									metricUnit="cm"
+									imperialUnit=" in"
+									metricUnit=" cm"
 								/> : null}
 							{temp > 60 || expanded ? <InfoRow
 								label="Humidity"
@@ -537,8 +533,8 @@ const HomeScreen = () => {
 										value={visibility}
 										cutoffs={visibilityCutoffs}
 										textArray={["foggy", "misty", "clear"]}
-										imperialUnit="mi"
-										metricUnit="km"
+										imperialUnit=" mi"
+										metricUnit=" km"
 									/>
 									{day == 0 ?
 										<InfoRow
@@ -555,8 +551,8 @@ const HomeScreen = () => {
 											value={windGusts ? windGusts : wind}
 											cutoffs={windCutoffs}
 											textArray={windLabels}
-											imperialUnit="mph"
-											metricUnit="kph" />
+											imperialUnit=" mph"
+											metricUnit=" kph" />
 										: null}
 									<TextRow
 										label="Sunrise"
