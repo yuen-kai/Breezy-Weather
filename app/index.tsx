@@ -12,7 +12,8 @@ import {
 	Appbar,
 	SegmentedButtons,
 	useTheme,
-	IconButton
+	IconButton,
+	Tooltip
 } from "react-native-paper";
 import { router } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
@@ -26,10 +27,11 @@ let first = true;
 const HomeScreen = () => {
 	//States
 	const theme = useTheme()
-	const { unit, cutoffs, timeOfDay, setTimeOfDay } = useSettingsStore();
+	const { unit, cutoffs, timeOfDay, timeOfDaySettings, weatherData, setTimeOfDay, setWeatherData } = useSettingsStore();
 
 	const [options, setOptions] = useState(false);
-	const [location, setLocation] = useState("Boston, Massachusetts");
+	const [locationName, setLocationName] = useState("Boston, Massachusetts");
+	const [locationCoords, setLocationCoords] = useState<string>("");
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [items, setItems] = useState([{ label: "Boston, Massachusetts", value: "Boston, Massachusetts" }, { label: "New York, New York", value: "New York, New York" }, { label: "Los Angeles, California", value: "Los Angeles, California" }]);
 	const [dropDownLoading, setDropdownLoading] = useState(false);
@@ -38,15 +40,14 @@ const HomeScreen = () => {
 	const [expanded, setExpanded] = useState<boolean>(false);
 	const [day, setDay] = useState<number>(0);
 
-	const [weatherData, setWeatherData] = useState<WeatherApiResponse | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	//Setup (settings, location, weather data)
 
-	const fetchWeather = async (location: string) => {
+	const fetchWeather = async (location?: string) => {
 		setError(null);
 		try {
-			const data = await getWeatherData(location);
+			const data = await getWeatherData(location || locationCoords || locationName);
 			setWeatherData(data);
 		} catch (err) {
 			setError((err as Error).message);
@@ -62,17 +63,23 @@ const HomeScreen = () => {
 		}
 		let location = (await Location.getCurrentPositionAsync()).coords;
 		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
-		setLocation(locations[0].name + ", " + locations[0].region);
-		fetchWeather(location.latitude + "," + location.longitude)
+		setLocationName(locations[0].name + ", " + locations[0].region);
+		setLocationCoords(location.latitude + "," + location.longitude);
+		fetchWeather()
 	}
+
+	//runs only once
+	useEffect(() => {
+		if (!first) return
+		first = false;
+		fetchWeather(); // fetch weather data so don't have to wait for location
+		getCurrentLocation();
+	}, []);
 
 	//runs whenever screen is loaded
 	useEffect(() => {
-		fetchWeather(location); // fetch weather data so don't have to wait for location
-		getCurrentLocation();
-
 		const intervalId = setInterval(() => {
-			fetchWeather(location);
+			fetchWeather();
 		}, 1800000); // 30 minutes
 
 		return () => clearInterval(intervalId); // Cleanup when unmounting
@@ -83,12 +90,11 @@ const HomeScreen = () => {
 		return weatherData?.forecast.forecastday[day].hour.filter(({ time }) => {
 			const h = new Date(time).getHours();
 			const curr = new Date().getHours();
+
 			return (day === 0 ? h >= curr : true) &&
-				((h >= 0 && h < 7) ? timeOfDay.includes('earlyMorning') :
-					(h >= 7 && h < 11) ? timeOfDay.includes('morning') :
-						(h >= 11 && h < 15) ? timeOfDay.includes('noon') :
-							(h >= 15 && h < 20) ? timeOfDay.includes('evening') :
-								(h >= 20 && h < 24) ? timeOfDay.includes('night') : false);
+				timeOfDaySettings.some(setting =>
+					timeOfDay.includes(setting.label) && h >= setting.start && h < setting.end
+				);
 		});
 	}
 
@@ -247,33 +253,53 @@ const HomeScreen = () => {
 		hasZeroValue,
 		zeroText
 	}) => {
-		// // Determine min and max values based on weather data
-		// let minValue = 0;
-		// let maxValue = 0;
-		// if (label === "Overall") {
-		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.avgtemp_f));
-		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.avgtemp_f));
-		// } else if (label === "Temp") {
-		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.mintemp_f));
-		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.maxtemp_f));
-		// } else if (label === "Wind") {
-		// 	minValue = Math.min(...weatherData.forecast.forecastday.map(day => day.day.minwind_mph));
-		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.maxwind_mph));
-		// } else if (label === "Precip") {
-		// 	maxValue = Math.max(...weatherData.forecast.forecastday.map(day => day.day.totalprecip_in));
-		// }
+		// Determine min and max values based on weather data
+		let minValue = 0;
+		let maxValue = 0;
 
-		// // Calculate indices based on min and max values
-		// const minBoxIndex = cutoffs.findIndex(cutoff => cutoff >= minValue);
-		// const maxBoxIndex = cutoffs.findIndex(cutoff => cutoff >= maxValue);
+		if (weather && weather.length > 0) {
+			if (label === "Overall" || label === "Temp") {
+				minValue = Math.min(...weather.map(hour => hour.temp_f ?? 0));
+				maxValue = Math.max(...weather.map(hour => hour.temp_f ?? 0));
+			} else if (label === "Wind") {
+				minValue = Math.min(...weather.map(hour => hour.wind_mph ?? 0));
+				maxValue = Math.max(...weather.map(hour => hour.wind_mph ?? 0));
+			} else if (label === "Precip Inches") {
+				maxValue = Math.max(...weather.map(hour => hour.precip_in ?? 0));
+			} else if (label === "Humidity") {
+				minValue = Math.min(...weather.map(hour => hour.humidity ?? 0));
+				maxValue = Math.max(...weather.map(hour => hour.humidity ?? 0));
+			} else if (label === "UV Index") {
+				minValue = Math.min(...weather.map(hour => hour.uv ?? 0));
+				maxValue = Math.max(...weather.map(hour => hour.uv ?? 0));
+			} else if (label === "Visibility") {
+				minValue = Math.min(...weather.map(hour => hour.vis_miles ?? 0));
+				maxValue = Math.max(...weather.map(hour => hour.vis_miles ?? 0));
+			}
+		}
+
+		// Calculate indices based on min and max values
+		const minBoxIndex = cutoffs.findIndex(cutoff => cutoff >= minValue);
+		const maxBoxIndex = cutoffs.findIndex(cutoff => cutoff >= maxValue);
 
 		let selectedIndex = convertToScale(value, cutoffs);
 		return (
 			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2 }}>{label}:</Text>
-				<Text variant="bodyLarge" style={{ flex: 1.5, fontWeight: "bold" }}>
-					{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
-				</Text>
+				<Text variant="bodyLarge" style={{ flex: 2, marginTop: 5 }}>{label}:</Text>
+				<View style={{ flex: 1.5, flexDirection: "row" }}>
+					<Text variant="bodyLarge" style={{ fontWeight: "bold", marginTop: 5 }}>
+						{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
+					</Text>
+					{minBoxIndex !== undefined && maxBoxIndex !== undefined && Math.abs(maxBoxIndex - minBoxIndex) >= 2 && (
+						<Tooltip title={`Min: ${minValue}, Max: ${maxValue}`} enterTouchDelay={0} leaveTouchDelay={2000}>
+							<IconButton
+								icon="swap-vertical-bold"
+								iconColor={theme.colors.error}
+							/>
+						</Tooltip>
+					)}
+				</View>
+
 				<View style={[styles.infoColn, { flex: 2.8 }]}>
 					<BoxRow
 						numBoxes={cutoffs.length}
@@ -281,7 +307,7 @@ const HomeScreen = () => {
 					// minBox={selectedIndex - 1}
 					// maxBox={selectedIndex + 1}
 					/>
-					<Text variant="labelSmall">
+					<Text variant="labelMedium">
 						{roundWeatherValue(label, value)}{
 							unit === "imperial" ? imperialUnit : metricUnit}
 					</Text>
@@ -318,7 +344,7 @@ const HomeScreen = () => {
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
-				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather(location)} />
+				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather()} />
 			} >
 				{/* Location picker */}
 				<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
@@ -326,13 +352,13 @@ const HomeScreen = () => {
 						listMode="SCROLLVIEW"
 						open={dropdownOpen}
 						setOpen={setDropdownOpen}
-						value={location}
+						value={locationName}
 						searchable
-						items={items.some(item => item.value === location)
+						items={items.some(item => item.value === locationName)
 							? items
-							: [{ label: location, value: location }, ...items]}
+							: [{ label: locationName, value: locationName }, ...items]}
 						setItems={setItems}
-						setValue={setLocation}
+						setValue={setLocationName}
 						onSelectItem={(item) => fetchWeather(item.value)}
 						loading={dropDownLoading}
 						disableLocalSearch={true} // required for remote search
@@ -413,18 +439,16 @@ const HomeScreen = () => {
 					style={{ marginTop: 16, marginBottom: 32 }}
 					value={timeOfDay}
 					onValueChange={(value) => setTimeOfDay(value)}
-					buttons={[
-						{ value: 'earlyMorning', label: 'Early', disabled: day == 0 && new Date().getHours() >= 7, }, // 12 am - 7 am
-						{ value: 'morning', label: 'Morning', disabled: day == 0 && new Date().getHours() >= 11 }, // 7 am - 11 am
-						{ value: 'noon', label: 'Noon', disabled: day == 0 && new Date().getHours() >= 15 }, // 11 am - 3 pm
-						{ value: 'evening', label: 'Evening', disabled: day == 0 && new Date().getHours() >= 20 }, // 3 pm - 8 pm
-						{ value: 'night', label: 'Night' }, // 8 pm - 12 am
-					]}
+					buttons={timeOfDaySettings.map(setting => ({
+						value: setting.label,
+						label: setting.displayName,
+						disabled: day === 0 && new Date().getHours() >= setting.end,
+					}))}
 					multiSelect
 					theme={{
 						fonts: {
-							labelLarge: { fontSize: 12 }, // Adjust text size
-						}
+							labelLarge: { fontSize: 12 },
+						},
 					}}
 				/>
 				{error && <Text style={styles.errorText}>{error}</Text>}
@@ -600,10 +624,10 @@ const HomeScreen = () => {
 			</ScrollView>
 			<View style={{ flexDirection: "row", justifyContent: "space-around" }}>
 				<Button mode="text" onPress={() => setDay(day - 1)} disabled={day === 0} style={{ flex: 1 }}>
-					Previous
+					Previous Day
 				</Button>
 				<Button mode="text" onPress={() => setDay(day + 1)} disabled={day === 2} style={{ flex: 1 }}>
-					Next
+					Next Day
 				</Button>
 			</View>
 		</View >

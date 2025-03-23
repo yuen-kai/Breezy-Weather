@@ -18,16 +18,19 @@ import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
 import { ClothingItem, defaultClothingItems } from '@/types/clothing';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import { TimeOfDaySetting } from '@/types/timeOfDay';
 
 
 const SettingsScreen = () => {
 
   const theme = useTheme();
   const {
+    timeOfDaySettings,
     unit,
     darkMode,
     cutoffs,
     clothingItems,
+    setTimeOfDaySettings,
     setUnit,
     setDarkMode,
     setCutoffs,
@@ -40,35 +43,19 @@ const SettingsScreen = () => {
   const [image, setImage] = useState<string>('');
   const [tint, setTint] = useState(false);
 
-  async function saveUnit(value: UnitType) {
+  async function saveSettings(settingType: 'unit' | 'darkMode' | 'cutoffs' | 'timeOfDaySettings' | 'clothing', value?: any) {
     try {
-      await AsyncStorage.setItem('unit', JSON.stringify(value));
-    } catch (e) {
-      console.error("Error saving unit", e);
-    }
-  }
+      const stateMap = {
+        'unit': unit,
+        'darkMode': darkMode,
+        'cutoffs': cutoffs,
+        'timeOfDaySettings': timeOfDaySettings,
+        'clothing': clothingItems
+      };
 
-  async function saveTheme(value: boolean) {
-    try {
-      await AsyncStorage.setItem('darkMode', JSON.stringify(value));
+      await AsyncStorage.setItem(settingType, JSON.stringify(value ?? stateMap[settingType]));
     } catch (e) {
-      console.error("Error saving theme", e);
-    }
-  }
-
-  async function saveCutoffs() {
-    try {
-      await AsyncStorage.setItem('cutoffs', JSON.stringify(cutoffs));
-    } catch (e) {
-      console.error("Error saving cutoffs", e);
-    }
-  };
-
-  async function saveClothingItems(value: ClothingItem[]) {
-    try {
-      await AsyncStorage.setItem('clothing', JSON.stringify(value));
-    } catch (e) {
-      console.error("Error saving clothing items", e);
+      console.error(`Error saving ${settingType}`, e);
     }
   }
 
@@ -97,7 +84,7 @@ const SettingsScreen = () => {
     }]
     newClothingItems.sort((a, b) => a.temperatureRange[1] - b.temperatureRange[1]);
     setClothingItems(newClothingItems);
-    saveClothingItems(newClothingItems);
+    saveSettings('clothing', newClothingItems);
 
     setImage('');
     setNewClothingName('');
@@ -109,7 +96,7 @@ const SettingsScreen = () => {
   function removeClothingItem(name: string) {
     let newClothingItems = clothingItems.filter((item) => item.name !== name)
     setClothingItems(newClothingItems);
-    saveClothingItems(newClothingItems);
+    saveSettings('clothing', newClothingItems);
   }
 
   return (
@@ -124,17 +111,51 @@ const SettingsScreen = () => {
         {/* Toggle dark mode */}
         <View style={styles.row}>
           <Text variant="bodyLarge">Dark Mode</Text>
-          <Switch value={darkMode} onValueChange={(value) => { setDarkMode(value); saveTheme(value) }} />
+          <Switch value={darkMode} onValueChange={(value) => { setDarkMode(value); saveSettings('darkMode', value) }} />
         </View>
 
         <Divider style={styles.divider} />
 
         {/* Unit */}
         <Text variant="bodyLarge">Units</Text>
-        <RadioButton.Group onValueChange={(value) => { setUnit(value as UnitType); saveUnit(value as UnitType) }} value={unit}>
+        <RadioButton.Group onValueChange={(value) => { setUnit(value as UnitType); saveSettings('unit', value as UnitType) }} value={unit}>
           <RadioButton.Item label="Imperial (F)" value="imperial" />
           <RadioButton.Item label="Metric (C)" value="metric" />
         </RadioButton.Group>
+        <Divider style={styles.divider} />
+
+        {/* Time of Day Settings */}
+        <Text variant="bodyLarge">Time of Day Settings</Text>
+        {timeOfDaySettings.map((setting, index) => (
+          <View key={index} style={styles.row}>
+            <Text variant="bodyMedium" style={{ flex: 1 }}>{setting.displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text variant="bodyLarge" style={{ marginRight: 8 }}>
+                {index === 0 ? '0' : isNaN(setting.start) ? '' : setting.start.toString()}
+              </Text>
+              <Text variant="bodyLarge" style={{ marginHorizontal: 4 }}>to </Text>
+              {index === timeOfDaySettings.length - 1 ? (
+                <Text variant="bodyLarge" style={{ marginLeft: 8 }}>24</Text>
+              ) : (
+                <TextInput
+                  style={{ textAlign: 'center' }}
+                  value={isNaN(setting.end) ? '' : setting.end.toString()}
+                  onChangeText={(text) => {
+                    const newEnd = parseInt(text);
+                    const newSettings = [...timeOfDaySettings];
+                    newSettings[index] = { ...setting, end: newEnd };
+                    if (index < newSettings.length - 1) {
+                      newSettings[index + 1] = { ...newSettings[index + 1], start: newEnd };
+                    }
+                    setTimeOfDaySettings(newSettings);
+                  }}
+                  onEndEditing={() => saveSettings('timeOfDaySettings')}
+                  keyboardType="numeric"
+                />
+              )}
+            </View>
+          </View>
+        ))}
         <Divider style={styles.divider} />
 
         {/* Edit Cutoffs */}
@@ -154,7 +175,7 @@ const SettingsScreen = () => {
                     newValues[i] = parseInt(text);
                     setCutoffs({ ...cutoffs, [key]: newValues });
                   }}
-                  onEndEditing={() => saveCutoffs}
+                  onEndEditing={() => saveSettings('cutoffs')}
                   mode="outlined"
                   keyboardType="numeric"
                   style={{ flex: 1, marginHorizontal: 4 }}
@@ -180,7 +201,7 @@ const SettingsScreen = () => {
         <View style={styles.row}>
           <View>
             <TouchableOpacity onPress={pickImage}>
-              <Image source={{ uri: image }} style={{ height: 120, aspectRatio: 1, marginHorizontal: 16, marginTop:16, backgroundColor: theme.colors.elevation.level2 }} />
+              <Image source={{ uri: image }} style={{ height: 120, aspectRatio: 1, marginHorizontal: 16, marginTop: 16, backgroundColor: theme.colors.elevation.level2, tintColor: tint ? theme.colors.onBackground : undefined }} />
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "center" }}>
               <Text variant="bodyLarge">Tint</Text>

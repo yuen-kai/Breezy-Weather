@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
+import { TimeOfDay } from "@/types/timeOfDay";
 
 let initial = true;
 
@@ -59,10 +60,10 @@ const Layout = () => {
 		}
 	}
 
-	function getTimeOfDay() {
+	function getTimeOfDay(): TimeOfDay[] {
 		const h = new Date().getHours();
 		if (h >= 20 && h < 24) return ["night"];
-		let tempTimeOfDay = [];
+		let tempTimeOfDay: TimeOfDay[] = [];
 		if (h < 7) tempTimeOfDay.push("earlyMorning");
 		if (h < 11) tempTimeOfDay.push("morning");
 		if (h < 15) tempTimeOfDay.push("noon");
@@ -80,7 +81,7 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-			<Slot />
+			<Slot/>
 			<StatusBar style={darkMode ? "light" : "dark"} />
 		</PaperProvider>
 	);

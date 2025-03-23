@@ -5,11 +5,12 @@ import { Image } from "expo-image";
 import { Text, useTheme } from "react-native-paper";
 import { ClothingItem } from "@/types/clothing";
 import useSettingsStore from "@/store/settingsStore";
+import { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
 
 interface ClothingSuggestionProps {
 	temperature: number; // in correct unit (e.g., already converted to F if user chose imperial)
 	textWidth?: number;
-	textVariant?: string;
+	textVariant?: VariantProp<never>;
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
