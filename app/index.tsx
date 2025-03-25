@@ -61,30 +61,56 @@ const HomeScreen = () => {
 			Alert.alert('Permission to access location was denied');
 			return;
 		}
-		let location = (await Location.getCurrentPositionAsync()).coords;
-		let locations = await locationAutocomplete(location.latitude + "," + location.longitude);
+
+		try {
+			// Get last known location while waiting for current position
+			let lastLocation = await Location.getLastKnownPositionAsync();
+			if (lastLocation) {
+				setLocationDetails(lastLocation);
+			}
+			
+			// Get current position (this may take time)
+			let currentLocation = await Location.getCurrentPositionAsync();
+			if (lastLocation && (currentLocation.coords.latitude !== lastLocation.coords.latitude || currentLocation.coords.longitude !== lastLocation.coords.longitude)) {
+				setLocationDetails(currentLocation);
+			}
+		} catch (error) {
+			console.error("Error getting location:", error);
+			Alert.alert("Location Error", "Failed to get your location.");
+		}
+	}
+
+	async function setLocationDetails(location: Location.LocationObject){
+		let locations = await locationAutocomplete(location.coords.latitude + "," + location.coords.longitude);
 		setLocationName(locations[0].name + ", " + locations[0].region);
-		setLocationCoords(location.latitude + "," + location.longitude);
-		fetchWeather()
+		setLocationCoords(location.coords.latitude + "," + location.coords.longitude);
+		fetchWeather(location.coords.latitude + "," + location.coords.longitude);
 	}
 
 	//runs only once
 	useEffect(() => {
 		if (!first) return
 		first = false;
-		fetchWeather(); // fetch weather data so don't have to wait for location
 		getCurrentLocation();
 	}, []);
 
 	//runs whenever screen is loaded
 	useEffect(() => {
 		const intervalId = setInterval(() => {
-			fetchWeather();
+			reloadWeather();
 		}, 1800000); // 30 minutes
 
 		return () => clearInterval(intervalId); // Cleanup when unmounting
 	}, []);
 
+
+	function reloadWeather(){
+		if (locationCoords) {
+			getCurrentLocation();
+		} else {
+			fetchWeather();
+		}
+	}
 
 	function getWeatherTimeOfDay() {
 		return weatherData?.forecast.forecastday[day].hour.filter(({ time }) => {
@@ -106,8 +132,8 @@ const HomeScreen = () => {
 
 	const temp = !dailyWeather ? getAverage(weather?.map(curr => curr?.temp_f)) : weather[0]?.avgtemp_f;
 	const wind = !dailyWeather ? weightWind(weather?.map(curr => curr?.wind_mph)) : weather[0]?.maxwind_mph;
-	const precipProb = filteredWeather?.length > 0 ? weightPrecip(weather?.map(curr => curr?.chance_of_rain)) : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
-	const precip = !dailyWeather ? getAverage(weather?.map(curr => curr?.precip_in).filter(v => v > 0)) : weather[0]?.totalprecip_in;
+	const precipProb = filteredWeather?.length > 0 ? weightPrecipProb(weather?.map(curr => curr?.chance_of_rain)) : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
+	const precip = !dailyWeather ? weightPrecip(weather?.map(curr => curr?.precip_in).filter(v => v > 0)) : weather[0]?.totalprecip_in;
 
 	const humidity = !dailyWeather ? getAverage(weather?.map(curr => curr?.humidity)) : weather[0]?.avghumidity;
 	const cloudCover = day === 0 ? weatherData?.current.cloud : 50;
@@ -153,7 +179,7 @@ const HomeScreen = () => {
 		return weightedSum / totalWeight;
 	}
 
-	function weightPrecip(precips: number[]): number {
+	function weightPrecipProb(precips: number[]): number {
 		if (!precips || precips.length === 0) return 0;
 		// Sort values from highest to lowest (favor higher precipitation)
 		const sorted = [...precips].sort((a, b) => b - a);
@@ -162,6 +188,21 @@ const HomeScreen = () => {
 		let weightedSum = 0;
 		sorted.forEach((value, index) => {
 			const weight = 1.5 ** (sorted.length - index);
+			weightedSum += value * weight;
+			totalWeight += weight;
+		});
+		return weightedSum / totalWeight;
+	}
+
+	function weightPrecip(precips: number[]): number {
+		if (!precips || precips.length === 0) return 0;
+		// Sort values from highest to lowest (favor higher precipitation)
+		const sorted = [...precips].sort((a, b) => b - a);
+		// Apply weighted average with more weight to higher values
+		let totalWeight = 0;
+		let weightedSum = 0;
+		sorted.forEach((value, index) => {
+			const weight = 1.05 ** (sorted.length - index);
 			weightedSum += value * weight;
 			totalWeight += weight;
 		});
@@ -279,8 +320,8 @@ const HomeScreen = () => {
 		}
 
 		// Calculate indices based on min and max values
-		const minBoxIndex = cutoffs.findIndex(cutoff => cutoff >= minValue);
-		const maxBoxIndex = cutoffs.findIndex(cutoff => cutoff >= maxValue);
+		const minBoxIndex = convertToScale(minValue, cutoffs);
+		const maxBoxIndex = convertToScale(maxValue, cutoffs);
 
 		let selectedIndex = convertToScale(value, cutoffs);
 		return (
@@ -290,7 +331,7 @@ const HomeScreen = () => {
 					<Text variant="bodyLarge" style={{ fontWeight: "bold", marginTop: 5 }}>
 						{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
 					</Text>
-					{minBoxIndex !== undefined && maxBoxIndex !== undefined && Math.abs(maxBoxIndex - minBoxIndex) >= 2 && (
+					{minBoxIndex !== undefined && maxBoxIndex !== undefined && maxBoxIndex - minBoxIndex >= 2 && (
 						<Tooltip title={`Min: ${minValue}, Max: ${maxValue}`} enterTouchDelay={0} leaveTouchDelay={2000}>
 							<IconButton
 								icon="swap-vertical-bold"
@@ -344,7 +385,7 @@ const HomeScreen = () => {
 				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
 			</Appbar.Header>
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
-				<RefreshControl refreshing={refreshing} onRefresh={() => fetchWeather()} />
+				<RefreshControl refreshing={refreshing} onRefresh={reloadWeather} />
 			} >
 				{/* Location picker */}
 				<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
