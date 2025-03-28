@@ -21,6 +21,8 @@ import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
+import { TimeOfDay } from "@/types/timeOfDay";
+import * as SplashScreen from 'expo-splash-screen';
 
 let first = true;
 
@@ -42,6 +44,15 @@ const HomeScreen = () => {
 
 	const [error, setError] = useState<string | null>(null);
 
+	// Keep the splash screen visible while we fetch resources
+	SplashScreen.preventAutoHideAsync();
+
+	// Set the animation options. This is optional.
+	SplashScreen.setOptions({
+		duration: 1000,
+		fade: true,
+	});
+
 	//Setup (settings, location, weather data)
 
 	const fetchWeather = async (location?: string) => {
@@ -53,7 +64,6 @@ const HomeScreen = () => {
 			setError((err as Error).message);
 		}
 	};
-
 
 	async function getCurrentLocation() {
 		let { status } = await Location.requestForegroundPermissionsAsync();
@@ -68,7 +78,7 @@ const HomeScreen = () => {
 			if (lastLocation) {
 				setLocationDetails(lastLocation);
 			}
-			
+			SplashScreen.hide();
 			// Get current position (this may take time)
 			let currentLocation = await Location.getCurrentPositionAsync();
 			if (lastLocation && (currentLocation.coords.latitude !== lastLocation.coords.latitude || currentLocation.coords.longitude !== lastLocation.coords.longitude)) {
@@ -80,11 +90,22 @@ const HomeScreen = () => {
 		}
 	}
 
-	async function setLocationDetails(location: Location.LocationObject){
+	async function setLocationDetails(location: Location.LocationObject) {
 		let locations = await locationAutocomplete(location.coords.latitude + "," + location.coords.longitude);
 		setLocationName(locations[0].name + ", " + locations[0].region);
 		setLocationCoords(location.coords.latitude + "," + location.coords.longitude);
 		fetchWeather(location.coords.latitude + "," + location.coords.longitude);
+	}
+
+	function getTimeOfDay(): TimeOfDay[] {
+		const h = new Date().getHours();
+		if (h >= 20 && h < 24) return ["night"];
+		let tempTimeOfDay: TimeOfDay[] = [];
+		if (h < 7) tempTimeOfDay.push("earlyMorning");
+		if (h < 11) tempTimeOfDay.push("morning");
+		if (h < 15) tempTimeOfDay.push("noon");
+		if (h < 20) tempTimeOfDay.push("evening");
+		return tempTimeOfDay;
 	}
 
 	//runs only once
@@ -92,6 +113,7 @@ const HomeScreen = () => {
 		if (!first) return
 		first = false;
 		getCurrentLocation();
+		setTimeOfDay(getTimeOfDay());
 	}, []);
 
 	//runs whenever screen is loaded
@@ -104,7 +126,7 @@ const HomeScreen = () => {
 	}, []);
 
 
-	function reloadWeather(){
+	function reloadWeather() {
 		if (locationCoords) {
 			getCurrentLocation();
 		} else {
@@ -397,9 +419,9 @@ const HomeScreen = () => {
 						searchable
 						items={items.some(item => item.value === locationName)
 							? items
-							: [{ label: locationName, value: locationName }, ...items]}
+							: [{ label: locationName, value: locationName }, ...items]} // Add current location to items if it's not already there
 						setItems={setItems}
-						setValue={setLocationName}
+						setValue={(value) => { setLocationName(value); setLocationCoords("") }}
 						onSelectItem={(item) => fetchWeather(item.value)}
 						loading={dropDownLoading}
 						disableLocalSearch={true} // required for remote search
