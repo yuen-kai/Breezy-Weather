@@ -13,8 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#E8E7FF"
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "package": "com.yuenkai.simpleWeather"
     },

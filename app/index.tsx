@@ -11,10 +11,10 @@ import {
 	Divider,
 	Appbar,
 	SegmentedButtons,
-	useTheme,
 	IconButton,
 	Tooltip
 } from "react-native-paper";
+import { useAppTheme } from "../theme";
 import { router } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
@@ -22,13 +22,12 @@ import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { TimeOfDay } from "@/types/timeOfDay";
-import * as SplashScreen from 'expo-splash-screen';
 
 let first = true;
 
 const HomeScreen = () => {
 	//States
-	const theme = useTheme()
+	const theme = useAppTheme()
 	const { unit, cutoffs, timeOfDay, timeOfDaySettings, weatherData, setTimeOfDay, setWeatherData } = useSettingsStore();
 
 	const [options, setOptions] = useState(false);
@@ -43,15 +42,6 @@ const HomeScreen = () => {
 	const [day, setDay] = useState<number>(0);
 
 	const [error, setError] = useState<string | null>(null);
-
-	// Keep the splash screen visible while we fetch resources
-	SplashScreen.preventAutoHideAsync();
-
-	// Set the animation options. This is optional.
-	SplashScreen.setOptions({
-		duration: 1000,
-		fade: true,
-	});
 
 	//Setup (settings, location, weather data)
 
@@ -78,7 +68,6 @@ const HomeScreen = () => {
 			if (lastLocation) {
 				setLocationDetails(lastLocation);
 			}
-			SplashScreen.hide();
 			// Get current position (this may take time)
 			let currentLocation = await Location.getCurrentPositionAsync();
 			if (lastLocation && (currentLocation.coords.latitude !== lastLocation.coords.latitude || currentLocation.coords.longitude !== lastLocation.coords.longitude)) {

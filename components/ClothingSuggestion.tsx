@@ -2,7 +2,8 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { Text, useTheme } from "react-native-paper";
+import { Text} from "react-native-paper";
+import { useAppTheme } from "../theme";
 import { ClothingItem } from "@/types/clothing";
 import useSettingsStore from "@/store/settingsStore";
 import { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
@@ -16,7 +17,7 @@ interface ClothingSuggestionProps {
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 	 temperature, textWidth, textVariant = "bodyLarge"
 }) => {
-	const theme = useTheme();
+	const theme = useAppTheme();
 	const { clothingItems } = useSettingsStore();
 
 	// Find the first clothing item that matches the temperature range given a sorted list

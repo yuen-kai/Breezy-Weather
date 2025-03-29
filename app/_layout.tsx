@@ -8,7 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
-import { TimeOfDay } from "@/types/timeOfDay";
+import * as SplashScreen from 'expo-splash-screen';
 
 let initial = true;
 
@@ -21,7 +21,10 @@ const Layout = () => {
 		setClothingItems,
 	} = useSettingsStore();
 
-
+	SplashScreen.setOptions({
+		fade: true,
+		duration: 300, //(of the fade out animation)
+	});
 	async function getSettings() {
 		const keys = ["unit", "darkMode", "cutoffs", "clothing"];
 		const defaults = {
@@ -69,7 +72,7 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-			<Slot/>
+			<Slot />
 			<StatusBar style={darkMode ? "light" : "dark"} />
 		</PaperProvider>
 	);

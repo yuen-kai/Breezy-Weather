@@ -7,14 +7,13 @@ import {
   RadioButton,
   TextInput,
   Button,
-  Divider,
-  useTheme,
   Appbar,
   Card,
   IconButton,
   Snackbar,
   Portal
 } from 'react-native-paper';
+import { useAppTheme } from "@/theme";
 import useSettingsStore, { UnitType } from '../../store/settingsStore';
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,7 +27,7 @@ import * as Linking from 'expo-linking';
 
 const SettingsScreen = () => {
 
-  const theme = useTheme();
+  const theme = useAppTheme();
   const {
     timeOfDaySettings,
     unit,
