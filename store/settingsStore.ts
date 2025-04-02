@@ -14,7 +14,8 @@ interface SettingsStore {
   clothingItems: ClothingItem[];
   timeOfDay: TimeOfDay[];
   timeOfDaySettings: TimeOfDaySetting[];
-  weatherData: WeatherApiResponse | null;
+  weatherData: WeatherApiResponse | null; // weather data should remain in the background
+  lastRefresh: number;
   setDarkMode: (mode: boolean) => void;
   setUnit: (unit: UnitType) => void;
   setCutoffs: (cutoffs: Cutoffs) => void;
@@ -22,6 +23,7 @@ interface SettingsStore {
   setTimeOfDay: (timeOfDay: TimeOfDay[]) => void;
   setTimeOfDaySettings: (timeOfDaySettings: TimeOfDaySetting[]) => void;
   setWeatherData: (data: WeatherApiResponse) => void;
+  setLastRefresh: (lastRefresh: number) => void;
 }
 
 const useSettingsStore = create<SettingsStore>((set) => ({
@@ -31,6 +33,7 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   clothingItems: defaultClothingItems,
   timeOfDay: [],
   timeOfDaySettings: defaultTimeOfDaySettings,
+  lastRefresh: 0,
   weatherData: null,
   setUnit: (unit) => set(() => ({ unit })),
   setDarkMode: (mode) => set(() => ({ darkMode: mode })),
@@ -38,7 +41,8 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   setClothingItems: (clothingItems) => set(() => ({ clothingItems })),
   setTimeOfDay: (timeOfDay) => set(() => ({ timeOfDay })),
   setTimeOfDaySettings: (timeOfDaySettings) => set(() => ({ timeOfDaySettings })),
-  setWeatherData: (data) => set(() => ({ weatherData: data }))
+  setWeatherData: (data) => set(() => ({ weatherData: data })),
+  setLastRefresh: (lastRefresh) => set(() => ({ lastRefresh }))
 }));
 
 export default useSettingsStore;

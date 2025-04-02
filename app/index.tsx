@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import WeatherApiResponse from '../types/weather';
 import { getWeatherData, locationAutocomplete } from '../services/weatherApi';
 import * as Location from 'expo-location';
-import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl } from "react-native";
+import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl, AppState } from "react-native";
 import {
 	Text,
 	Button,
@@ -15,7 +15,7 @@ import {
 	Tooltip
 } from "react-native-paper";
 import { useAppTheme } from "../theme";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
@@ -28,7 +28,8 @@ let first = true;
 const HomeScreen = () => {
 	//States
 	const theme = useAppTheme()
-	const { unit, cutoffs, timeOfDay, timeOfDaySettings, weatherData, setTimeOfDay, setWeatherData } = useSettingsStore();
+	const navigation = useNavigation();
+	const { unit, cutoffs, timeOfDay, timeOfDaySettings, weatherData, lastRefresh, setTimeOfDay, setWeatherData, setLastRefresh } = useSettingsStore();
 
 	const [options, setOptions] = useState(false);
 	const [locationName, setLocationName] = useState("Boston, Massachusetts");
@@ -48,6 +49,7 @@ const HomeScreen = () => {
 	const fetchWeather = async (location?: string) => {
 		setError(null);
 		try {
+			setLastRefresh(new Date().getTime());
 			const data = await getWeatherData(location || locationCoords || locationName);
 			setWeatherData(data);
 		} catch (err) {
@@ -86,6 +88,10 @@ const HomeScreen = () => {
 		fetchWeather(location.coords.latitude + "," + location.coords.longitude);
 	}
 
+	function distance(coord1: string, coord2lat: number, coord2lon: number): number {
+		return Math.sqrt(Math.pow(parseFloat(coord1.split(",")[0]) - coord2lat, 2) + Math.pow(parseFloat(coord1.split(",")[1]) - coord2lon, 2));
+	}
+
 	function getTimeOfDay(): TimeOfDay[] {
 		const h = new Date().getHours();
 		if (h >= 20 && h < 24) return ["night"];
@@ -105,14 +111,19 @@ const HomeScreen = () => {
 		setTimeOfDay(getTimeOfDay());
 	}, []);
 
-	//runs whenever screen is loaded
+	//reload weather if app opened after 30 minutes
 	useEffect(() => {
-		const intervalId = setInterval(() => {
-			reloadWeather();
-		}, 1800000); // 30 minutes
+		const subscription = AppState.addEventListener('change', nextAppState => {
+			if (nextAppState === 'active' && new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
+				// Reload if app is opened after 30 minutes
+				reloadWeather();
+			}
+		});
 
-		return () => clearInterval(intervalId); // Cleanup when unmounting
-	}, []);
+		return () => {
+			subscription.remove();
+		};
+	}, [lastRefresh]); //because stale state issues
 
 
 	function reloadWeather() {
@@ -139,18 +150,27 @@ const HomeScreen = () => {
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
 	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [weatherData?.forecast.forecastday[day].day]);
 
-	const feelsLike = !dailyWeather ? getAverage(weather?.map(curr => curr?.feelslike_f)) : weather[0]?.avgtemp_f;
+	const feelsLikeTemps = weather?.map(curr => curr?.feelslike_f) ?? [];
+	const feelsLike = !dailyWeather ? getAverage(feelsLikeTemps) : weather?.[0]?.avgtemp_f;
 
-	const temp = !dailyWeather ? getAverage(weather?.map(curr => curr?.temp_f)) : weather[0]?.avgtemp_f;
-	const wind = !dailyWeather ? weightWind(weather?.map(curr => curr?.wind_mph)) : weather[0]?.maxwind_mph;
-	const precipProb = filteredWeather?.length > 0 ? weightPrecipProb(weather?.map(curr => curr?.chance_of_rain)) : day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather[0]?.daily_chance_of_rain;
-	const precip = !dailyWeather ? weightPrecip(weather?.map(curr => curr?.precip_in).filter(v => v > 0)) : weather[0]?.totalprecip_in;
+	const temps = weather?.map(curr => curr?.temp_f) ?? [];
+	const temp = !dailyWeather ? getAverage(temps) : weather?.[0]?.avgtemp_f;
+	const windSpeeds = weather?.map(curr => curr?.wind_mph) ?? [];
+	const wind = !dailyWeather ? weightWind(windSpeeds) : weather?.[0]?.maxwind_mph;
+	const precipProbs = filteredWeather?.length > 0 ? weather?.map(curr => curr?.chance_of_rain) ?? [] : [day === 0 ? weatherData?.forecast.forecastday[day].hour[new Date().getHours()].chance_of_rain : weather?.[0]?.daily_chance_of_rain];
+	const precipProb = !dailyWeather ? weightPrecipProb(precipProbs) : precipProbs[0];
 
-	const humidity = !dailyWeather ? getAverage(weather?.map(curr => curr?.humidity)) : weather[0]?.avghumidity;
+	const precipInches = weather?.map(curr => curr?.precip_in).filter(v => v > 0) ?? [];
+	const precip = !dailyWeather ? weightPrecip(precipInches) : weather?.[0]?.totalprecip_in;
+
+	const humidityLevels = weather?.map(curr => curr?.humidity) ?? [];
+	const humidity = !dailyWeather ? getAverage(humidityLevels) : weather?.[0]?.avghumidity;
 	const cloudCover = day === 0 ? weatherData?.current.cloud : 50;
 	const windGusts = day === 0 ? weatherData?.current.gust_mph : wind;
-	const uv = !dailyWeather ? getAverage(weather?.map(curr => curr?.uv)) : weather[0]?.uv;
-	const visibility = !dailyWeather ? weightVisibility(weather?.map(curr => curr?.vis_miles)) : weather[0]?.avgvis_miles;
+	const uvs = weather?.map(curr => curr?.uv) ?? [];
+	const uv = !dailyWeather ? getAverage(uvs) : weather?.[0]?.uv;
+	const visibilities = weather?.map(curr => curr?.vis_miles) ?? [];
+	const visibility = !dailyWeather ? weightVisibility(visibilities) : weather[0]?.avgvis_miles;
 
 	const conditionIcon = day === 0 ? weatherData?.current.condition.icon : weatherData?.forecast.forecastday[day].day.condition.icon;
 	const conditionText = day === 0 ? weatherData?.current.condition.text : weatherData?.forecast.forecastday[day].day.condition.text;
@@ -258,7 +278,7 @@ const HomeScreen = () => {
 
 	function roundWeatherValue(label: string, value: number) {
 		switch (label) {
-			case "Overall":
+			case "Feels like":
 			case "Temp":
 				value = unit === "imperial" ? value : convertTemperature(value);
 				break;
@@ -309,25 +329,27 @@ const HomeScreen = () => {
 		let minValue = 0;
 		let maxValue = 0;
 
-		if (weather && weather.length > 0) {
-			if (label === "Overall" || label === "Temp") {
-				minValue = Math.min(...weather.map(hour => hour.temp_f ?? 0));
-				maxValue = Math.max(...weather.map(hour => hour.temp_f ?? 0));
-			} else if (label === "Wind") {
-				minValue = Math.min(...weather.map(hour => hour.wind_mph ?? 0));
-				maxValue = Math.max(...weather.map(hour => hour.wind_mph ?? 0));
-			} else if (label === "Precip Inches") {
-				maxValue = Math.max(...weather.map(hour => hour.precip_in ?? 0));
-			} else if (label === "Humidity") {
-				minValue = Math.min(...weather.map(hour => hour.humidity ?? 0));
-				maxValue = Math.max(...weather.map(hour => hour.humidity ?? 0));
-			} else if (label === "UV Index") {
-				minValue = Math.min(...weather.map(hour => hour.uv ?? 0));
-				maxValue = Math.max(...weather.map(hour => hour.uv ?? 0));
-			} else if (label === "Visibility") {
-				minValue = Math.min(...weather.map(hour => hour.vis_miles ?? 0));
-				maxValue = Math.max(...weather.map(hour => hour.vis_miles ?? 0));
-			}
+		if (label === "Feels like") {
+			minValue = Math.min(...feelsLikeTemps);
+			maxValue = Math.max(...feelsLikeTemps);
+		} else if (label === "Temp") {
+			minValue = !dailyWeather ? Math.min(...temps) : weatherData?.forecast.forecastday[day].day.mintemp_f ?? 0;
+			maxValue = !dailyWeather ? Math.max(...temps) : weatherData?.forecast.forecastday[day].day.maxtemp_f ?? 0;
+		} else if (label === "Wind") {
+			minValue = Math.min(...windSpeeds);
+			maxValue = Math.max(...windSpeeds);
+		} else if (label === "Precip Inches") {
+			minValue = Math.min(...precipInches);
+			maxValue = Math.max(...precipInches);
+		} else if (label === "Humidity") {
+			minValue = Math.min(...humidityLevels);
+			maxValue = Math.max(...humidityLevels);
+		} else if (label === "UV Index") {
+			minValue = Math.min(...uvs);
+			maxValue = Math.max(...uvs);
+		} else if (label === "Visibility") {
+			minValue = Math.min(...visibilities);
+			maxValue = Math.max(...visibilities);
 		}
 
 		// Calculate indices based on min and max values
@@ -337,16 +359,22 @@ const HomeScreen = () => {
 		let selectedIndex = convertToScale(value, cutoffs);
 		return (
 			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2, marginTop: 5 }}>{label}:</Text>
-				<View style={{ flex: 1.5, flexDirection: "row" }}>
-					<Text variant="bodyLarge" style={{ fontWeight: "bold", marginTop: 5 }}>
-						{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
-					</Text>
+				<Text style={{ flex: 2, marginTop: 5, fontSize: label === "Feels like" ? 20 : 16 }}>{label}:</Text>
+				<View style={{ flex: 1.5, flexDirection: "row", alignItems: "center" }}>
+					<View>
+						<Text variant={label == "Feels like" ? "titleLarge" : "titleMedium"} style={{ fontWeight: "bold", marginTop: 5 }}>
+							{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
+						</Text>
+						<Text variant={label == "Feels like" ? "labelLarge" : "labelMedium"}>
+							{roundWeatherValue(label, value)}{
+								unit === "imperial" ? imperialUnit : metricUnit}
+						</Text></View>
 					{minBoxIndex !== undefined && maxBoxIndex !== undefined && maxBoxIndex - minBoxIndex >= 2 && (
-						<Tooltip title={`Min: ${minValue}, Max: ${maxValue}`} enterTouchDelay={0} leaveTouchDelay={2000}>
+						<Tooltip title={`Min: ${minValue} ${unit === "imperial" ? imperialUnit : metricUnit}, Max: ${maxValue} ${unit === "imperial" ? imperialUnit : metricUnit}`} enterTouchDelay={0}>
 							<IconButton
 								icon="swap-vertical-bold"
 								iconColor={theme.colors.error}
+								style={{ height: 30, aspectRatio: 1 }}
 							/>
 						</Tooltip>
 					)}
@@ -356,13 +384,7 @@ const HomeScreen = () => {
 					<BoxRow
 						numBoxes={cutoffs.length}
 						selectedBox={value == 0 && hasZeroValue ? -1 : selectedIndex}
-					// minBox={selectedIndex - 1}
-					// maxBox={selectedIndex + 1}
 					/>
-					<Text variant="labelMedium">
-						{roundWeatherValue(label, value)}{
-							unit === "imperial" ? imperialUnit : metricUnit}
-					</Text>
 				</View>
 			</View>
 		);
@@ -393,13 +415,13 @@ const HomeScreen = () => {
 		<View style={[styles.container, { backgroundColor: theme.colors.background }]}>
 			<Appbar.Header>
 				<Appbar.Content title="Breezy" onPress={() => setOptions(!options)} />
-				<Appbar.Action icon="cog" onPress={() => router.push("/settings")} />
+				<Appbar.Action icon="cog" onPress={() => navigation.navigate("settings/index")} />
 			</Appbar.Header>
 			<ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false} refreshControl={
 				<RefreshControl refreshing={refreshing} onRefresh={reloadWeather} />
 			} >
 				{/* Location picker */}
-				<View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
 					<DropDownPicker
 						listMode="SCROLLVIEW"
 						open={dropdownOpen}
@@ -410,7 +432,7 @@ const HomeScreen = () => {
 							? items
 							: [{ label: locationName, value: locationName }, ...items]} // Add current location to items if it's not already there
 						setItems={setItems}
-						setValue={(value) => { setLocationName(value); setLocationCoords("") }}
+						setValue={(value) => { setLocationName(value); setLocationCoords(""); setItems([]); }}
 						onSelectItem={(item) => fetchWeather(item.value)}
 						loading={dropDownLoading}
 						disableLocalSearch={true} // required for remote search
@@ -421,11 +443,18 @@ const HomeScreen = () => {
 							// Get items from API
 							locationAutocomplete(text)
 								.then((items) => {
-									let newItems = items.map((item) => {
+									if (locationCoords !== "") {
+										items.sort((a, b) => {
+											let distanceA = distance(locationCoords, a.lat, a.lon);
+											let distanceB = distance(locationCoords, b.lat, b.lon);
+											return distanceA - distanceB;
+										});
+									}
+
+									setItems(items.map((item) => {
 										let locationString = item.name + ", " + item.region;
 										return { label: locationString, value: locationString }
-									})
-									setItems(newItems);
+									}));
 								})
 								.catch((err) => {
 									console.error(err);
@@ -438,7 +467,7 @@ const HomeScreen = () => {
 
 						containerStyle={{ flex: 1 }}
 						style={{
-							backgroundColor: theme.colors.elevation.level1, // Paper background color
+							backgroundColor: theme.colors.elevation.level1,
 							borderColor: theme.colors.outline, // Primary color for border
 						}}
 						textStyle={{
@@ -482,7 +511,7 @@ const HomeScreen = () => {
 					/>
 					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
 				</View>
-				<Text variant="headlineMedium" style={{ textAlign: "center" }}>
+				<Text variant="headlineMedium" style={{ textAlign: "center", marginTop: 16 }}>
 					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 				</Text>
 
@@ -518,7 +547,7 @@ const HomeScreen = () => {
 								</View>
 							)}
 							<InfoRow
-								label="Overall"
+								label="Feels like"
 								value={feelsLike}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
@@ -639,7 +668,7 @@ const HomeScreen = () => {
 										value={weatherData.forecast.forecastday[day].astro.sunset}
 									/>
 								</> : null}
-							<Button onPress={() => setExpanded(!expanded)} style={{ alignSelf: "center" }}>
+							<Button onPress={() => setExpanded(!expanded)} style={{ alignSelf: "center", marginTop: 16 }} mode="contained">
 								{expanded ? "Collapse" : "Expand"}
 							</Button>
 						</View>
@@ -648,7 +677,7 @@ const HomeScreen = () => {
 						<Text variant="titleMedium" style={styles.sectionTitle}>
 							Hourly Forecast
 						</Text>
-						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: 8 }}>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ marginBottom: 30, paddingHorizontal: 8 }}>
 							{(day == 0 ? weatherData.forecast.forecastday[day].hour
 								.slice(new Date().getHours()) : weatherData.forecast.forecastday[day].hour)
 								.map((hourItem, index) => {
@@ -740,6 +769,7 @@ const styles = StyleSheet.create({
 	infoRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
+		alignItems: "center",
 		marginVertical: 2,
 	},
 	sectionTitle: {

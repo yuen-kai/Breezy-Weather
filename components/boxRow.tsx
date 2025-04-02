@@ -25,11 +25,12 @@ const BoxRow: React.FC<BoxRowProps> = ({
 			justifyContent: "space-between",
 			alignItems: "center",
 			marginHorizontal: 10,
+			flex:1,
 		},
 		box: {
 			flex: 1,
-			// height: 27,
-			aspectRatio: 1,
+			height: "70%",
+			// aspectRatio: 1,
 			margin: 1,
 			backgroundColor: theme.colors.emptyBox,
 		},
@@ -46,16 +47,14 @@ const BoxRow: React.FC<BoxRowProps> = ({
 						style={[
 							styles.box,
 							index <= selectedBox && styles.highlightedBox, // Apply highlight style
+							{
+								borderTopLeftRadius: index === 0 ? 5 : 0,
+								borderTopRightRadius: index === numBoxes - 1 ? 5 : 0,
+								borderBottomLeftRadius: index === 0 ? 5 : 0,
+								borderBottomRightRadius: index === numBoxes - 1 ? 5 : 0,
+							},
 						]}
 					/>
-					{numBoxes == 3 && index < 2 ? (
-						<View
-							style={[
-								styles.box,
-								{ opacity: 0 }, // Apply highlight style
-							]}
-						/>
-					) : null}
 				</React.Fragment>
 			))}
 		</View>

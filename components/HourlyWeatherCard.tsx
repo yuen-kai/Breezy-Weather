@@ -34,7 +34,7 @@ const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
           style={styles.icon}
           resizeMode="contain"
         />
-        <Text variant="bodyMedium" style={{textAlign:'center'}}>Scale: {overallScale}</Text>
+        <Text variant="bodyMedium" style={{textAlign:'center'}}>Feels like: {overallScale}/5</Text>
       </Card.Content>
     </Card>
   );

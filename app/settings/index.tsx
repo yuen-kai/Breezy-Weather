@@ -136,7 +136,6 @@ const SettingsScreen = () => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      padding: 16,
     },
     card: {
       marginBottom: 16,
@@ -199,10 +198,10 @@ const SettingsScreen = () => {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
         <Appbar.Content title="Settings" />
-        <Appbar.Action icon="home" onPress={() => router.push("/")} />
+        <Appbar.Action icon="home" onPress={() => router.navigate("/")} />
       </Appbar.Header>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1, padding: 16 }} showsVerticalScrollIndicator={false}>
         <Card style={styles.card}>
           <View style={styles.row}>
             <Text variant="bodyLarge">Dark Mode</Text>
@@ -219,7 +218,7 @@ const SettingsScreen = () => {
         </Card>
 
         <Card style={styles.card}>
-          <Text variant="bodyLarge" style={styles.sectionTitle}>Time of Day Settings</Text>
+          <Text variant="bodyLarge" style={styles.sectionTitle}>Time of Day Settings (24 hr clock)</Text>
           {timeOfDaySettings.map((setting, index) => (
             <View key={index} style={styles.row}>
               <Text variant="bodyMedium" style={{ flex: 1 }}>{setting.displayName}</Text>
@@ -421,7 +420,7 @@ const SettingsScreen = () => {
           </Button>
         </Card>
 
-        <Card style={styles.card}>
+        <Card style={[styles.card, { marginBottom: 30 }]}>
           <Text variant="bodyLarge" style={styles.sectionTitle}>Credits</Text>
           <Card.Content>
             <Text variant="bodyMedium" style={{ marginBottom: 12 }}>

@@ -1,6 +1,6 @@
 // app/_layout.tsx
-import React, { useEffect } from "react";
-import { Slot, Stack } from "expo-router";
+import React, { lazy, useEffect } from "react";
+import { Navigator, Slot, Stack, Tabs } from "expo-router";
 import { Provider as PaperProvider } from "react-native-paper";
 import useSettingsStore from "../store/settingsStore";
 import { LightTheme, DarkTheme } from "../theme";
@@ -23,8 +23,9 @@ const Layout = () => {
 
 	SplashScreen.setOptions({
 		fade: true,
-		duration: 300, //(of the fade out animation)
+		duration: 500, //(of the fade out animation)
 	});
+
 	async function getSettings() {
 		const keys = ["unit", "darkMode", "cutoffs", "clothing"];
 		const defaults = {
@@ -72,7 +73,10 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-			<Slot />
+			<Tabs>
+				<Tabs.Screen name="index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }} />
+				<Tabs.Screen name="settings/index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }} />
+			</Tabs>
 			<StatusBar style={darkMode ? "light" : "dark"} />
 		</PaperProvider>
 	);
