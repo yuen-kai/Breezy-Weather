@@ -21,10 +21,10 @@ const Layout = () => {
 		setClothingItems,
 	} = useSettingsStore();
 
-	SplashScreen.setOptions({
-		fade: true,
-		duration: 500, //(of the fade out animation)
-	});
+	// SplashScreen.setOptions({
+	// 	fade: true,
+	// 	duration: 500, //(of the fade out animation)
+	// });
 
 	async function getSettings() {
 		const keys = ["unit", "darkMode", "cutoffs", "clothing"];
