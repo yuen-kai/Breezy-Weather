@@ -49,74 +49,73 @@ const HomeScreen = () => {
 
 
 	async function fetchWeather(location?: string) {
-		setError(null);
 		try {
 			const data = await getWeatherData(location || locationCoords || locationName);
 			setLastRefresh(new Date().getTime());
-			await AsyncStorage.multiSet([
-				["weatherData", JSON.stringify(data)],
-				["lastRefresh", JSON.stringify(new Date().getTime())]
-			]); // cache weather data and refresh timestamp
+			// await AsyncStorage.multiSet([
+			// 	["weatherData", JSON.stringify(data)],
+			// 	["lastRefresh", JSON.stringify(new Date().getTime())]
+			// ]); // cache weather data and refresh timestamp
 			setWeatherData(data);
 		} catch (err) {
-			const [[, cachedData], [, cachedLastRefresh]] = await AsyncStorage.multiGet(["weatherData", "lastRefresh"]);
-			let cachedLastRefreshParsed
-			if (cachedLastRefresh) {
-				cachedLastRefreshParsed = JSON.parse(cachedLastRefresh);
-				setLastRefresh(cachedLastRefreshParsed);
-			}
-			if (cachedData) {
-				const lastRefreshDate = new Date(cachedLastRefreshParsed ?? lastRefresh);
-				const now = new Date();
-				const timeDiff =
-					(now.getFullYear() - lastRefreshDate.getFullYear()) * 365 +
-					(now.getMonth() - lastRefreshDate.getMonth()) * 30 +
-					(now.getDate() - lastRefreshDate.getDate())
+			// const [[, cachedData], [, cachedLastRefresh]] = await AsyncStorage.multiGet(["weatherData", "lastRefresh"]);
+			// let cachedLastRefreshParsed
+			// if (cachedLastRefresh) {
+			// 	cachedLastRefreshParsed = JSON.parse(cachedLastRefresh);
+			// 	setLastRefresh(cachedLastRefreshParsed);
+			// }
+			// if (cachedData) {
+			// 	const lastRefreshDate = new Date(cachedLastRefreshParsed ?? lastRefresh);
+			// 	const now = new Date();
+			// 	const timeDiff =
+			// 		(now.getFullYear() - lastRefreshDate.getFullYear()) * 365 +
+			// 		(now.getMonth() - lastRefreshDate.getMonth()) * 30 +
+			// 		(now.getDate() - lastRefreshDate.getDate())
 
-				if (timeDiff < 3) {
-					let parseCachedData: WeatherApiResponse = JSON.parse(cachedData);
-					let currentHour = parseCachedData.forecast.forecastday[timeDiff].hour[new Date().getHours()]
-					parseCachedData = {
-						...parseCachedData,
-						forecast: {
-							...parseCachedData.forecast,
-							forecastday: parseCachedData.forecast.forecastday.slice(timeDiff)
-						},
-						//fill in current as best as possible
-						current: {
-							...currentHour,
-							last_updated: new Date().toISOString(),
-							temp_c: currentHour.temp_c,
-							temp_f: currentHour.temp_f,
-							feelslike_c: currentHour.feelslike_c,
-							feelslike_f: currentHour.feelslike_f,
-							condition: currentHour.condition,
-							wind_mph: currentHour.wind_mph,
-							wind_kph: currentHour.wind_kph,
-							wind_degree: currentHour.wind_degree,
-							wind_dir: currentHour.wind_dir,
-							pressure_mb: currentHour.pressure_mb,
-							pressure_in: currentHour.pressure_in,
-							precip_mm: currentHour.precip_mm,
-							precip_in: currentHour.precip_in,
-							humidity: currentHour.humidity,
-							cloud: currentHour.cloud, uv: currentHour.uv,
-							gust_mph: currentHour.wind_mph,
-							gust_kph: currentHour.wind_kph
-						}
-					}
-					setWeatherData(parseCachedData);
+			// 	if (timeDiff < 3) {
+			// 		let parseCachedData: WeatherApiResponse = JSON.parse(cachedData);
+			// 		let currentHour = parseCachedData.forecast.forecastday[timeDiff].hour[new Date().getHours()]
+			// 		parseCachedData = {
+			// 			...parseCachedData,
+			// 			forecast: {
+			// 				...parseCachedData.forecast,
+			// 				forecastday: parseCachedData.forecast.forecastday.slice(timeDiff)
+			// 			},
+			// 			//fill in current as best as possible
+			// 			current: {
+			// 				...currentHour,
+			// 				last_updated: new Date().toISOString(),
+			// 				temp_c: currentHour.temp_c,
+			// 				temp_f: currentHour.temp_f,
+			// 				feelslike_c: currentHour.feelslike_c,
+			// 				feelslike_f: currentHour.feelslike_f,
+			// 				condition: currentHour.condition,
+			// 				wind_mph: currentHour.wind_mph,
+			// 				wind_kph: currentHour.wind_kph,
+			// 				wind_degree: currentHour.wind_degree,
+			// 				wind_dir: currentHour.wind_dir,
+			// 				pressure_mb: currentHour.pressure_mb,
+			// 				pressure_in: currentHour.pressure_in,
+			// 				precip_mm: currentHour.precip_mm,
+			// 				precip_in: currentHour.precip_in,
+			// 				humidity: currentHour.humidity,
+			// 				cloud: currentHour.cloud, uv: currentHour.uv,
+			// 				gust_mph: currentHour.wind_mph,
+			// 				gust_kph: currentHour.wind_kph
+			// 			}
+			// 		}
+			// 		setWeatherData(parseCachedData);
 
-					const lastRefreshTime = timeDiff === 0
-						? lastRefreshDate.toLocaleTimeString([], { timeStyle: 'short' })
-						: lastRefreshDate.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-					setError(`${(err as Error).message} - Falling back to cached weather data from ${lastRefreshTime}.`);
-				} else {
-					setError(`${(err as Error).message} - Cached data too outdated.`);
-				}
-			} else {
+			// 		const lastRefreshTime = timeDiff === 0
+			// 			? lastRefreshDate.toLocaleTimeString([], { timeStyle: 'short' })
+			// 			: lastRefreshDate.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+			// 		setError(`${(err as Error).message} - Falling back to cached weather data from ${lastRefreshTime}.`);
+			// 	} else {
+			// 		setError(`${(err as Error).message} - Cached data too outdated.`);
+			// 	}
+			// } else {
 				setError((err as Error).message);
-			}
+			// }
 		}
 	};
 
