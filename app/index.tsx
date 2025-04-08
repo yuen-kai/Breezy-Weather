@@ -283,6 +283,7 @@ const HomeScreen = () => {
 	function useScaledValue(
 		value: number,
 		cutoffs: number[],
+		hasZeroValue: boolean = false,
 	) {
 		const valueSelected = useSharedValue(5); //start at 5 because that is what happens before it is loaded
 
@@ -291,7 +292,7 @@ const HomeScreen = () => {
 		}, [value, cutoffs]);
 
 		const animatedStyle = useAnimatedStyle(() => ({
-			width: withTiming(`${(valueSelected.value + 1) / cutoffs.length * 100}%`, {
+			width: withTiming(value == 0 && hasZeroValue ? 0 : `${(valueSelected.value + 1) / cutoffs.length * 100}%`, {
 				duration: 500,
 				easing: Easing.inOut(Easing.ease),
 			}),
@@ -304,7 +305,7 @@ const HomeScreen = () => {
 	let animatedTempProps = useScaledValue(temp, tempCutoffs);
 	let animatedWindProps = useScaledValue(wind, windCutoffs);
 	let animatedWindGustsProps = useScaledValue(windGusts, windCutoffs);
-	let animatedPrecipProbProps = useScaledValue(precipProb, precipProbCutoffs);
+	let animatedPrecipProbProps = useScaledValue(precipProb, precipProbCutoffs, !dayWeather?.day.daily_will_it_rain && !dayWeather?.day.daily_will_it_snow);
 	let animatedPrecipProps = useScaledValue(precip, precipCutoffs);
 	let animatedHumidityProps = useScaledValue(humidity, humidityCutoffs);
 	let animatedUvProps = useScaledValue(uv, uvCutoffs);
