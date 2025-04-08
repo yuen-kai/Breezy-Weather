@@ -5,14 +5,12 @@ import { useAppTheme } from "../theme";
 interface BoxRowProps {
     numBoxes: number;
     selectedBox: number;
-    previousSelectedBox?: number;
     containerStyle?: object;
 }
 
 const BoxRow: React.FC<BoxRowProps> = ({
     numBoxes,
     selectedBox,
-    previousSelectedBox,
     containerStyle,
 }) => {
     const theme = useAppTheme();

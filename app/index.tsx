@@ -201,17 +201,24 @@ const HomeScreen = () => {
 
 	// Custom hook to track value changes with animated shared values
 	// function useScaledValue(
-	// 	value: number, 
-	// 	cutoffs: number[], 
-	// 	sharedValue: Animated.SharedValue<number>
+	// 	value: number,
+	// 	cutoffs: number[],
 	// ) {
+	// 	const valueSelected = useSharedValue(0);
+
 	// 	useEffect(() => {
-	// 		sharedValue.value = convertToScale(value, cutoffs);
-	// 	}, [value, cutoffs, sharedValue]);
+	// 		valueSelected.value = convertToScale(value, cutoffs);
+	// 	}, [value, cutoffs]);
+
+	// 	const animatedStyle = useAnimatedProps(() => ({
+	// 		selectedBox: withTiming(valueSelected.value),
+	// 	}));
+
+	// 	return animatedStyle
 	// }
 
 	// // Using the custom hook
-	// useScaledValue(feelsLike, tempCutoffs, feelsLikeSelected);
+	// let animatedFeelsLike = useScaledValue(feelsLike, tempCutoffs);
 	// useScaledValue(temp, tempCutoffs, tempSelected);
 	// useScaledValue(wind, windCutoffs, windSelected);
 	// useScaledValue(precipProb, precipProbCutoffs, precipProbSelected);
@@ -408,7 +415,6 @@ const HomeScreen = () => {
 		const maxBoxIndex = convertToScale(maxValue, cutoffs);
 
 		let selectedIndex = convertToScale(value, cutoffs);
-		let previousSelectedIndex = convertToScale(label === "Feels like" ? prevFeelsLike : label === "Temp" ? prevTemp : label === "Wind" ? prevWind : label === "Precip" ? prevPrecipProb : label === "Precip Inches" ? prevPrecip : label === "Humidity" ? prevHumidity : label === "UV Index" ? prevUv : label === "Visibility" ? prevVisibility : 0, cutoffs);
 
 		return (
 			<View style={styles.infoRow}>
@@ -437,7 +443,6 @@ const HomeScreen = () => {
 					<BoxRow
 						numBoxes={cutoffs.length}
 						selectedBox={value == 0 && hasZeroValue ? -1 : selectedIndex}
-						previousSelectedBox={value == 0 && hasZeroValue ? -1 : previousSelectedIndex}
 					/>
 				</View>
 			</View>
@@ -588,7 +593,7 @@ const HomeScreen = () => {
 				<SegmentedButtons
 					style={{ marginTop: 16, marginBottom: !error ? 32 : 16 }}
 					value={timeOfDay}
-					onValueChange={(value) => { setPreviousValues(), setTimeOfDay(value) }}
+					onValueChange={(value) => { setTimeOfDay(value) }}
 					buttons={timeOfDaySettings.map(setting => ({
 						value: setting.label,
 						label: setting.displayName,
@@ -790,10 +795,10 @@ const HomeScreen = () => {
 			</ScrollView>
 			{
 				weatherData && <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-					<Button mode="text" onPress={() => { setPreviousValues(), setDay(day - 1) }} disabled={day === 0} style={{ flex: 1 }}>
+					<Button mode="text" onPress={() => { setDay(day - 1) }} disabled={day === 0} style={{ flex: 1 }}>
 						Previous Day
 					</Button>
-					<Button mode="text" onPress={() => { setPreviousValues(), setDay(day + 1) }} disabled={day === (weatherData?.forecast.forecastday.length - 1)} style={{ flex: 1 }}>
+					<Button mode="text" onPress={() => { setDay(day + 1) }} disabled={day === (weatherData?.forecast.forecastday.length - 1)} style={{ flex: 1 }}>
 						Next Day
 					</Button>
 				</View>
