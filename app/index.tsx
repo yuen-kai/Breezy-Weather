@@ -22,6 +22,7 @@ import ClothingSuggestion from "../components/ClothingSuggestion";
 import BoxRow from "@/components/boxRow";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { TimeOfDay } from "@/types/timeOfDay";
+import { InfoRow, convertToScale } from "@/components/infoRow";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Animated, {
 	useSharedValue,
@@ -32,6 +33,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 let first = true;
+
+
+const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
 
 const HomeScreen = () => {
 	//States
@@ -199,37 +203,6 @@ const HomeScreen = () => {
 	const conditionIcon = day === 0 ? weatherData?.current.condition.icon : dayWeather?.day.condition.icon;
 	const conditionText = day === 0 ? weatherData?.current.condition.text : dayWeather?.day.condition.text;
 
-	// Custom hook to track value changes with animated shared values
-	// function useScaledValue(
-	// 	value: number,
-	// 	cutoffs: number[],
-	// ) {
-	// 	const valueSelected = useSharedValue(0);
-
-	// 	useEffect(() => {
-	// 		valueSelected.value = convertToScale(value, cutoffs);
-	// 	}, [value, cutoffs]);
-
-	// 	const animatedStyle = useAnimatedProps(() => ({
-	// 		selectedBox: withTiming(valueSelected.value),
-	// 	}));
-
-	// 	return animatedStyle
-	// }
-
-	// // Using the custom hook
-	// let animatedFeelsLike = useScaledValue(feelsLike, tempCutoffs);
-	// useScaledValue(temp, tempCutoffs, tempSelected);
-	// useScaledValue(wind, windCutoffs, windSelected);
-	// useScaledValue(precipProb, precipProbCutoffs, precipProbSelected);
-	// useScaledValue(precip, precipCutoffs, precipSelected);
-	// useScaledValue(humidity, humidityCutoffs, humiditySelected);
-	// useScaledValue(uv, uvCutoffs, uvSelected);
-	// useScaledValue(visibility, visibilityCutoffs, visibilitySelected);
-
-
-
-
 	function getAverage(values: number[]): number {
 		if (!values || values.length === 0) return 0;
 		return values.reduce((a, b) => a + b) / values.length;
@@ -295,23 +268,6 @@ const HomeScreen = () => {
 		return weightedSum / totalWeight;
 	}
 
-	function convertTemperature(temp: number): number {
-		return unit === "imperial" ? temp : (temp - 32) * (5 / 9);
-	}
-
-	function convertWindSpeed(speed: number): number {
-		return unit === "imperial" ? speed : speed * 1.60934;
-	}
-
-	function convertPrecip(precip: number): number {
-		return unit === "imperial" ? precip : precip * 2.54;
-	}
-
-	function convertVisibility(vis: number): number {
-		return unit === "imperial" ? vis : vis * 1.60934;
-	}
-
-
 	//Info rows
 	const tempCutoffs = cutoffs["Temp"];
 	const windCutoffs = cutoffs["Wind"];
@@ -322,132 +278,41 @@ const HomeScreen = () => {
 	const visibilityCutoffs = cutoffs["Visibility"];
 	const cloudCoverCutoffs = cutoffs["Cloud Cover"];
 
+
+	// Custom hook to track value changes with animated shared values
+	function useScaledValue(
+		value: number,
+		cutoffs: number[],
+	) {
+		const valueSelected = useSharedValue(5); //start at 5 because that is what happens before it is loaded
+
+		useEffect(() => {
+			valueSelected.value = convertToScale(value, cutoffs);
+		}, [value, cutoffs]);
+
+		const animatedStyle = useAnimatedStyle(() => ({
+			width: withTiming(`${(valueSelected.value + 1) / cutoffs.length * 100}%`, {
+				duration: 500,
+				easing: Easing.inOut(Easing.ease),
+			}),
+		}));
+
+		return animatedStyle
+	}
+
+	let animatedFeelsLikeProps = useScaledValue(feelsLike, tempCutoffs);
+	let animatedTempProps = useScaledValue(temp, tempCutoffs);
+	let animatedWindProps = useScaledValue(wind, windCutoffs);
+	let animatedWindGustsProps = useScaledValue(windGusts, windCutoffs);
+	let animatedPrecipProbProps = useScaledValue(precipProb, precipProbCutoffs);
+	let animatedPrecipProps = useScaledValue(precip, precipCutoffs);
+	let animatedHumidityProps = useScaledValue(humidity, humidityCutoffs);
+	let animatedUvProps = useScaledValue(uv, uvCutoffs);
+	let animatedVisibilityProps = useScaledValue(visibility, visibilityCutoffs);
+	let animatedCloudProps = useScaledValue(cloudCover, cloudCoverCutoffs);
+
+
 	const windLabels = ["calm", "breezy", "windy"];
-
-	function convertToScale(value: number, cutoffs: number[]): number {
-		for (let i = 0; i < cutoffs.length; i++) {
-			if (value <= cutoffs[i]) return i;
-		}
-		return cutoffs.length;
-	}
-
-	function roundWeatherValue(label: string, value: number) {
-		switch (label) {
-			case "Feels like":
-			case "Temp":
-				value = unit === "imperial" ? value : convertTemperature(value);
-				break;
-			case "Wind":
-			case "Wind Gusts":
-				value = unit === "imperial" ? value : convertWindSpeed(value);
-				break;
-			case "Precip Inches":
-				value = unit === "imperial" ? value : convertPrecip(value);
-				break;
-			case "Visibility":
-				value = unit === "imperial" ? value : convertVisibility(value);
-				break;
-			case "Humidity":
-			case "UV Index":
-			case "Cloud Cover":
-			default:
-				break;
-		}
-
-		// Round to max precision 2
-		if (value > 10) return Math.round(value);
-		return value.toPrecision(2);
-	}
-
-	interface InfoRowProps {
-		label: string;
-		value: number;
-		cutoffs: number[];
-		textArray: string[];
-		imperialUnit: string;
-		metricUnit: string;
-		hasZeroValue?: boolean;
-		zeroText?: string;
-	}
-
-	const InfoRow: React.FC<InfoRowProps> = ({
-		label,
-		value,
-		cutoffs,
-		textArray,
-		imperialUnit,
-		metricUnit,
-		hasZeroValue,
-		zeroText
-	}) => {
-		// Determine min and max values based on weather data
-		let minValue = 0;
-		let maxValue = 0;
-
-		if (label === "Feels like") {
-			minValue = Math.min(...feelsLikeTemps);
-			maxValue = Math.max(...feelsLikeTemps);
-		} else if (label === "Temp") {
-			minValue = !dailyWeather ? Math.min(...temps) : dayWeather?.day.mintemp_f ?? 0;
-			maxValue = !dailyWeather ? Math.max(...temps) : dayWeather?.day.maxtemp_f ?? 0;
-		} else if (label === "Wind") {
-			minValue = Math.min(...windSpeeds);
-			maxValue = Math.max(...windSpeeds);
-		} else if (label === "Precip") {
-			minValue = Math.min(...precipProbs);
-			maxValue = Math.max(...precipProbs);
-		} else if (label === "Precip Inches") {
-			minValue = Math.min(...precipInches);
-			maxValue = Math.max(...precipInches);
-		} else if (label === "Humidity") {
-			minValue = Math.min(...humidityLevels);
-			maxValue = Math.max(...humidityLevels);
-		} else if (label === "UV Index") {
-			minValue = Math.min(...uvs);
-			maxValue = Math.max(...uvs);
-		} else if (label === "Visibility") {
-			minValue = Math.min(...visibilities);
-			maxValue = Math.max(...visibilities);
-		}
-
-		// Calculate indices based on min and max values
-		const minBoxIndex = convertToScale(minValue, cutoffs);
-		const maxBoxIndex = convertToScale(maxValue, cutoffs);
-
-		let selectedIndex = convertToScale(value, cutoffs);
-
-		return (
-			<View style={styles.infoRow}>
-				<Text style={{ flex: 2, marginTop: 5, fontSize: label === "Feels like" ? 20 : 16 }}>{label}:</Text>
-				<View style={{ flex: 1.5, flexDirection: "row", alignItems: "center" }}>
-					<View>
-						<Text variant={label == "Feels like" ? "titleLarge" : "titleMedium"} style={{ fontWeight: "bold", marginTop: 5 }} adjustsFontSizeToFit numberOfLines={1}>
-							{value == 0 && hasZeroValue ? zeroText : textArray[selectedIndex]}
-						</Text>
-						<Text variant={label == "Feels like" ? "labelLarge" : "labelMedium"}>
-							{roundWeatherValue(label, value)}{
-								unit === "imperial" ? imperialUnit : metricUnit}
-						</Text></View>
-					{minBoxIndex !== undefined && maxBoxIndex !== undefined && maxBoxIndex - minBoxIndex >= 2 && (
-						<Tooltip title={`Min: ${minValue} ${unit === "imperial" ? imperialUnit : metricUnit}, Max: ${maxValue} ${unit === "imperial" ? imperialUnit : metricUnit}`} enterTouchDelay={0}>
-							<IconButton
-								icon="swap-vertical-bold"
-								iconColor={theme.colors.error}
-								style={{ height: 30, aspectRatio: 1 }}
-							/>
-						</Tooltip>
-					)}
-				</View>
-
-				<View style={[styles.infoColn, { flex: 2.8 }]}>
-					<BoxRow
-						numBoxes={cutoffs.length}
-						selectedBox={value == 0 && hasZeroValue ? -1 : selectedIndex}
-					/>
-				</View>
-			</View>
-		);
-	};
 
 	interface TextRowProps {
 		label: string;
@@ -619,15 +484,15 @@ const HomeScreen = () => {
 									/>
 								</View>
 							)}
-							<InfoRow
+							<AnimatedInfoRow
 								label="Feels like"
 								value={feelsLike}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
 								imperialUnit=" °F"
 								metricUnit=" °C"
+								animatedProps={animatedFeelsLikeProps}
 							/>
-
 							<View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
 								<Image
 									source={{ uri: `https:${conditionIcon}` }}
@@ -647,33 +512,40 @@ const HomeScreen = () => {
 							</Text>
 							<Divider style={{ margin: 16, marginTop: 8 }} />
 							{/* <Card.Content> */}
-							<InfoRow
+							<AnimatedInfoRow
+								animatedProps={animatedTempProps}
 								label="Temp"
 								value={temp}
+								valuesArray={temps}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
 								imperialUnit=" °F"
 								metricUnit=" °C"
 							/>
-							<InfoRow
+							<AnimatedInfoRow
+								animatedProps={animatedWindProps}
 								label="Wind"
 								value={wind}
+								valuesArray={windSpeeds}
 								cutoffs={windCutoffs}
 								textArray={windLabels}
 								imperialUnit=" mph"
 								metricUnit=" kph"
 							/>
 							{day == 0 && windGusts > wind + 10 ?
-								<InfoRow
+								<AnimatedInfoRow
+									animatedProps={animatedWindGustsProps}
 									label="Wind Gusts"
 									value={windGusts}
 									cutoffs={windCutoffs}
 									textArray={windLabels}
 									imperialUnit=" mph"
 									metricUnit=" kph" /> : null}
-							<InfoRow
+							<AnimatedInfoRow
+								animatedProps={animatedPrecipProbProps}
 								label="Precip"
 								value={precipProb}
+								valuesArray={precipProbs}
 								cutoffs={precipProbCutoffs}
 								textArray={["unlikely", "possible", "likely"]}
 								imperialUnit="%"
@@ -681,17 +553,21 @@ const HomeScreen = () => {
 								hasZeroValue={!dayWeather?.day.daily_will_it_rain && !dayWeather?.day.daily_will_it_snow}
 								zeroText="none" />
 							{precipProb > 0 || precip > 0 ?
-								<InfoRow
+								<AnimatedInfoRow
+									animatedProps={animatedPrecipProps}
 									label={temp < 32 ? "Snow" : "Rain"}
 									value={precip}
+									valuesArray={precipInches}
 									cutoffs={precipCutoffs}
 									textArray={["drizzle", "shower", "downpour"]}
 									imperialUnit=" in/hr"
 									metricUnit=" cm/hr"
 								/> : null}
-							{temp >= 60 ? <InfoRow
+							{temp >= 60 ? <AnimatedInfoRow
+								animatedProps={animatedHumidityProps}
 								label="Humidity"
 								value={humidity}
+								valuesArray={humidityLevels}
 								cutoffs={humidityCutoffs}
 								textArray={["dry", "comfort", "sticky"]}
 								imperialUnit="%"
@@ -700,7 +576,8 @@ const HomeScreen = () => {
 							{expanded ?
 								<>
 									{day == 0 && windGusts <= wind + 10 ?
-										<InfoRow
+										<AnimatedInfoRow
+											animatedProps={animatedWindGustsProps}
 											label="Wind Gusts"
 											value={windGusts ? windGusts : wind}
 											cutoffs={windCutoffs}
@@ -708,31 +585,38 @@ const HomeScreen = () => {
 											imperialUnit=" mph"
 											metricUnit=" kph" />
 										: null}
-									{temp < 60 ? <InfoRow
+									{temp < 60 ? <AnimatedInfoRow
+										animatedProps={animatedHumidityProps}
 										label="Humidity"
 										value={humidity}
+										valuesArray={humidityLevels}
 										cutoffs={humidityCutoffs}
 										textArray={["dry", "comfort", "sticky"]}
 										imperialUnit="%"
 										metricUnit="%"
 									/> : null}
-									<InfoRow
+									<AnimatedInfoRow
+										animatedProps={animatedUvProps}
 										label="UV Index"
 										value={uv}
+										valuesArray={uvs}
 										cutoffs={uvCutoffs}
 										textArray={["safe", "caution", "danger"]}
 										imperialUnit=""
 										metricUnit="" />
-									<InfoRow
+									<AnimatedInfoRow
+										animatedProps={animatedVisibilityProps}
 										label="Visibility"
 										value={visibility}
+										valuesArray={visibilities}
 										cutoffs={visibilityCutoffs}
 										textArray={["foggy", "misty", "clear"]}
 										imperialUnit=" mi"
 										metricUnit=" km"
 									/>
 									{day == 0 && cloudCover ?
-										<InfoRow
+										<AnimatedInfoRow
+											animatedProps={animatedCloudProps}
 											label="Cloud Cover"
 											value={cloudCover}
 											cutoffs={cloudCoverCutoffs}

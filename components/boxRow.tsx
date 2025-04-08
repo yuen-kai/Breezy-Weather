@@ -4,15 +4,13 @@ import { useAppTheme } from "../theme";
 
 interface BoxRowProps {
     numBoxes: number;
-    selectedBox: number;
     containerStyle?: object;
 }
 
-const BoxRow: React.FC<BoxRowProps> = ({
+const BoxRow = React.forwardRef<View, BoxRowProps>(({
     numBoxes,
-    selectedBox,
     containerStyle,
-}) => {
+}, ref) => {
     const theme = useAppTheme();
 
     const styles = StyleSheet.create({
@@ -35,15 +33,14 @@ const BoxRow: React.FC<BoxRowProps> = ({
             backgroundColor: theme.colors.highlightedBox,
             borderTopLeftRadius: 10,
             borderBottomLeftRadius: 10,
-            height: "100%",
-            width: `${(selectedBox + 1) / numBoxes * 100}%`,
+            height: "100%"
         },
     });
 
     return (
         <View style={[styles.container, containerStyle]}>
             <View style={styles.background}>
-                <View style={styles.highlightedSection} />
+                <View ref={ref} style={styles.highlightedSection} />
                 {Array.from({ length: numBoxes - 1 }).map((_, index) => (
                     <View
                         key={`divider-${index}`}
@@ -59,6 +56,6 @@ const BoxRow: React.FC<BoxRowProps> = ({
             </View>
         </View>
     );
-};
+});
 
 export default BoxRow;
