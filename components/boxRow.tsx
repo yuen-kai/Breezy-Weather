@@ -1,65 +1,66 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { useAppTheme } from "../theme";
 
 interface BoxRowProps {
-	numBoxes: number;
-	selectedBox: number;
-	minBox?: number;
-	maxBox?: number;
-	containerStyle?: object;
+    numBoxes: number;
+    selectedBox: number;
+    previousSelectedBox?: number;
+    containerStyle?: object;
 }
 
 const BoxRow: React.FC<BoxRowProps> = ({
-	numBoxes,
-	selectedBox,
-	minBox,
-	maxBox,
-	containerStyle,
+    numBoxes,
+    selectedBox,
+    previousSelectedBox,
+    containerStyle,
 }) => {
-	const theme = useAppTheme();
-	
-	const styles = StyleSheet.create({
-		container: {
-			flexDirection: "row",
-			justifyContent: "space-between",
-			alignItems: "center",
-			marginHorizontal: 10,
-			flex:1,
-		},
-		box: {
-			flex: 1,
-			height: "70%",
-			// aspectRatio: 1,
-			margin: 1,
-			backgroundColor: theme.colors.emptyBox,
-		},
-		highlightedBox: {
-			backgroundColor: theme.colors.highlightedBox,
-		},
-	});
+    const theme = useAppTheme();
 
-	return (
-		<View style={[styles.container, containerStyle]}>
-			{Array.from({ length: numBoxes }).map((_, index) => (
-				<React.Fragment key={index}>
-					<View
-						style={[
-							styles.box,
-							index <= selectedBox && styles.highlightedBox, // Apply highlight style
-							{
-								borderTopLeftRadius: index === 0 ? 5 : 0,
-								borderTopRightRadius: index === numBoxes - 1 ? 5 : 0,
-								borderBottomLeftRadius: index === 0 ? 5 : 0,
-								borderBottomRightRadius: index === numBoxes - 1 ? 5 : 0,
-							},
-						]}
-					/>
-				</React.Fragment>
-			))}
-		</View>
-	);
+    const styles = StyleSheet.create({
+        container: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginHorizontal: 10,
+            flex: 1,
+        },
+        background: {
+            width: "100%",
+            height: "70%",
+            backgroundColor: theme.colors.emptyBox,
+            borderRadius: 10,
+            overflow: "hidden",
+            position: "absolute",
+        },
+        highlightedSection: {
+            backgroundColor: theme.colors.highlightedBox,
+            borderTopLeftRadius: 10,
+            borderBottomLeftRadius: 10,
+            height: "100%",
+            width: `${(selectedBox + 1) / numBoxes * 100}%`,
+        },
+    });
+
+    return (
+        <View style={[styles.container, containerStyle]}>
+            <View style={styles.background}>
+                <View style={styles.highlightedSection} />
+                {Array.from({ length: numBoxes - 1 }).map((_, index) => (
+                    <View
+                        key={`divider-${index}`}
+                        style={{
+                            position: 'absolute',
+                            height: '100%',
+                            width: 1,
+                            backgroundColor: theme.colors.background,
+                            left: `${((index + 1) / numBoxes) * 100}%`,
+                        }}
+                    />
+                ))}
+            </View>
+        </View>
+    );
 };
-
 
 export default BoxRow;

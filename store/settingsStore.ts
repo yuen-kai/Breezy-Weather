@@ -16,6 +16,7 @@ interface SettingsStore {
   timeOfDaySettings: TimeOfDaySetting[];
   weatherData: WeatherApiResponse | null; // weather data should remain in the background
   lastRefresh: number;
+  pinnedLocations: {label: string, value: string}[];
   setDarkMode: (mode: boolean) => void;
   setUnit: (unit: UnitType) => void;
   setCutoffs: (cutoffs: Cutoffs) => void;
@@ -24,6 +25,8 @@ interface SettingsStore {
   setTimeOfDaySettings: (timeOfDaySettings: TimeOfDaySetting[]) => void;
   setWeatherData: (data: WeatherApiResponse) => void;
   setLastRefresh: (lastRefresh: number) => void;
+  addPinnedLocation: (location: {label: string, value: string}) => void;
+  removePinnedLocation: (location: {label: string, value: string}) => void;
 }
 
 const useSettingsStore = create<SettingsStore>((set) => ({
@@ -35,6 +38,7 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   timeOfDaySettings: defaultTimeOfDaySettings,
   lastRefresh: 0,
   weatherData: null,
+  pinnedLocations: [],
   setUnit: (unit) => set(() => ({ unit })),
   setDarkMode: (mode) => set(() => ({ darkMode: mode })),
   setCutoffs: (cutoffs) => set(() => ({ cutoffs })),
@@ -42,7 +46,9 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   setTimeOfDay: (timeOfDay) => set(() => ({ timeOfDay })),
   setTimeOfDaySettings: (timeOfDaySettings) => set(() => ({ timeOfDaySettings })),
   setWeatherData: (data) => set(() => ({ weatherData: data })),
-  setLastRefresh: (lastRefresh) => set(() => ({ lastRefresh }))
+  setLastRefresh: (lastRefresh) => set(() => ({ lastRefresh })),
+  addPinnedLocation: (location) => set((state) => ({ pinnedLocations: [...state.pinnedLocations, location] })),
+  removePinnedLocation: (location) => set((state) => ({ pinnedLocations: state.pinnedLocations.filter((loc) => loc.value !== location.value) })),
 }));
 
 export default useSettingsStore;
