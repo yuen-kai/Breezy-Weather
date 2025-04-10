@@ -4,12 +4,17 @@
     "slug": "newSimpleWeather",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/iconIOSlight.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon":{
+        "light": "./assets/images/iconIOSlight.png",
+        "dark": "./assets/images/iconIOSdark.png",
+        "tinted": "./assets/images/iconIOStint.png"
+      }
     },
     "android": {
       "adaptiveIcon": {

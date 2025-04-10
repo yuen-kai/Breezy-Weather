@@ -15,7 +15,7 @@ const locationAutocomplete = async (location: string): Promise<WeatherApiRespons
   const url = `https://api.weatherapi.com/v1/search.json?key=${WEATHER_API_KEY}&q=${location}`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Failed to fetch weather data');
+    throw new Error('Failed to autocomplete location');
   }
   const data = await response.json();
   return data;

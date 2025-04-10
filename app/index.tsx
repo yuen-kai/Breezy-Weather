@@ -368,12 +368,32 @@ const HomeScreen = () => {
 							// Get items from API
 							locationAutocomplete(text)
 								.then((items) => {
-									if (locationCoords !== "") {
-										items.sort((a, b) => {
-											let distanceA = distance(locationCoords, a.lat, a.lon);
-											let distanceB = distance(locationCoords, b.lat, b.lon);
+									// If we have locationCoords, identify nearby locations and move them to the top
+									if (locationCoords) {
+										const nearbyThreshold = 1; // About a few cities away in lat/lon distance
+										
+										// Separate nearby and distant items
+										const nearbyItems = [];
+										const distantItems = [];
+										
+										for (const item of items) {
+											const dist = distance(locationCoords, item.lat, item.lon);
+											if (dist < nearbyThreshold) {
+												nearbyItems.push(item);
+											} else {
+												distantItems.push(item);
+											}
+										}
+										
+										// Sort nearby items by distance
+										nearbyItems.sort((a, b) => {
+											const distanceA = distance(locationCoords, a.lat, a.lon);
+											const distanceB = distance(locationCoords, b.lat, b.lon);
 											return distanceA - distanceB;
 										});
+										
+										// Combine lists: nearby items first, then distant items in their original order
+										items = [...nearbyItems, ...distantItems];
 									}
 
 									setLocationItems(items.map((item) => {
@@ -381,18 +401,18 @@ const HomeScreen = () => {
 										return {
 											label: locationString,
 											value: locationString,
-											icon: () => (
-												<IconButton
-													icon="pin"
-													size={16}
-													onPress={() => pinnedLocations.some(loc => loc.value === locationString)
-														? removePinnedLocation({ label: locationString, value: locationString })
-														: addPinnedLocation({ label: locationString, value: locationString })}
-													iconColor={pinnedLocations.some(loc => loc.value === locationString)
-														? theme.colors.primary
-														: theme.colors.onSurfaceDisabled}
-												/>
-											)
+											// icon: () => (
+											// 	<IconButton
+											// 		icon="pin"
+											// 		size={16}
+											// 		onPress={() => pinnedLocations.some(loc => loc.value === locationString)
+											// 			? removePinnedLocation({ label: locationString, value: locationString })
+											// 			: addPinnedLocation({ label: locationString, value: locationString })}
+											// 		iconColor={pinnedLocations.some(loc => loc.value === locationString)
+											// 			? theme.colors.primary
+											// 			: theme.colors.onSurfaceDisabled}
+											// 	/>
+											// )
 										}
 									}));
 								})
