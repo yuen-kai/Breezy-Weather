@@ -103,7 +103,7 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(({
 
     return (
         <View style={styles.infoRow}>
-            <Text style={{ flex: 2, marginTop: 5, fontSize: label === "Feels like" ? 20 : 16 }}>{label}:</Text>
+            <Text style={{ flex: 1.9, marginTop: 5, fontSize: label === "Feels like" ? 20 : 16 }}>{label}:</Text>
             <View style={{ flex: 1.5, flexDirection: "row", alignItems: "center" }}>
                 <View>
                     <Text variant={label == "Feels like" ? "titleLarge" : "titleMedium"} style={{ fontWeight: "bold", marginTop: 5 }} adjustsFontSizeToFit numberOfLines={1}>

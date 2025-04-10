@@ -31,8 +31,6 @@ const BoxRow = React.forwardRef<View, BoxRowProps>(({
         },
         highlightedSection: {
             backgroundColor: theme.colors.highlightedBox,
-            borderTopLeftRadius: 10,
-            borderBottomLeftRadius: 10,
             height: "100%"
         },
     });
