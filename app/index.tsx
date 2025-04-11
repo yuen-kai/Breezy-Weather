@@ -31,6 +31,7 @@ import Animated, {
 	Easing,
 	useAnimatedProps,
 } from 'react-native-reanimated';
+import { getAverage, weightPrecip, weightWind, weightVisibility, weightPrecipProb } from "@/functions/average";
 
 let first = true;
 
@@ -188,8 +189,8 @@ const HomeScreen = () => {
 	const precipProbs = filteredWeather?.length > 0 ? weather?.map(curr => curr?.chance_of_rain) ?? [] : [day === 0 ? dayWeather?.hour[new Date().getHours()].chance_of_rain : weather?.[0]?.daily_chance_of_rain];
 	const precipProb = !dailyWeather ? weightPrecipProb(precipProbs) : precipProbs[0];
 
-	const precipInches = weather?.map(curr => curr?.precip_in).filter(v => v > 0) ?? [];
-	const precip = !dailyWeather ? weightPrecip(precipInches) : weather?.[0]?.totalprecip_in;
+	const precipInches = weather?.map(curr => curr?.precip_in) ?? [];
+	const precip = !dailyWeather ? weightPrecip(precipInches.filter(v => v > 0)) : weather?.[0]?.totalprecip_in;
 
 	const humidityLevels = weather?.map(curr => curr?.humidity) ?? [];
 	const humidity = !dailyWeather ? getAverage(humidityLevels) : weather?.[0]?.avghumidity;
@@ -202,71 +203,6 @@ const HomeScreen = () => {
 
 	const conditionIcon = day === 0 ? weatherData?.current.condition.icon : dayWeather?.day.condition.icon;
 	const conditionText = day === 0 ? weatherData?.current.condition.text : dayWeather?.day.condition.text;
-
-	function getAverage(values: number[]): number {
-		if (!values || values.length === 0) return 0;
-		return values.reduce((a, b) => a + b) / values.length;
-	}
-
-	function weightVisibility(vis: number[]): number {
-		if (!vis || vis.length === 0) return 0;
-		// Sort values from lowest to highest (favor lower visibility)
-		const sorted = [...vis].sort((a, b) => a - b);
-		// Apply weighted average with more weight to lower values
-		let totalWeight = 0;
-		let weightedSum = 0;
-		sorted.forEach((value, index) => {
-			const weight = 2 ** (sorted.length - index);
-			weightedSum += value * weight;
-			totalWeight += weight;
-		});
-		return weightedSum / totalWeight;
-	}
-
-	function weightWind(winds: number[]): number {
-		if (!winds || winds.length === 0) return 0;
-		// Sort values from highest to lowest (favor higher wind)
-		const sorted = [...winds].sort((a, b) => b - a);
-		// Apply weighted average with more weight to higher values
-		let totalWeight = 0;
-		let weightedSum = 0;
-		sorted.forEach((value, index) => {
-			const weight = 2 ** (sorted.length - index);
-			weightedSum += value * weight;
-			totalWeight += weight;
-		});
-		return weightedSum / totalWeight;
-	}
-
-	function weightPrecipProb(precips: number[]): number {
-		if (!precips || precips.length === 0) return 0;
-		// Sort values from highest to lowest (favor higher precipitation)
-		const sorted = [...precips].sort((a, b) => b - a);
-		// Apply weighted average with more weight to higher values
-		let totalWeight = 0;
-		let weightedSum = 0;
-		sorted.forEach((value, index) => {
-			const weight = 1.5 ** (sorted.length - index);
-			weightedSum += value * weight;
-			totalWeight += weight;
-		});
-		return weightedSum / totalWeight;
-	}
-
-	function weightPrecip(precips: number[]): number {
-		if (!precips || precips.length === 0) return 0;
-		// Sort values from highest to lowest (favor higher precipitation)
-		const sorted = [...precips].sort((a, b) => b - a);
-		// Apply weighted average with more weight to higher values
-		let totalWeight = 0;
-		let weightedSum = 0;
-		sorted.forEach((value, index) => {
-			const weight = 1.05 ** (sorted.length - index);
-			weightedSum += value * weight;
-			totalWeight += weight;
-		});
-		return weightedSum / totalWeight;
-	}
 
 	//Info rows
 	const tempCutoffs = cutoffs["Temp"];
@@ -508,6 +444,7 @@ const HomeScreen = () => {
 							<AnimatedInfoRow
 								label="Feels like"
 								value={feelsLike}
+								valuesArray={feelsLikeTemps}
 								cutoffs={tempCutoffs}
 								textArray={["freezing", "cold", "mild", "warm", "hot"]}
 								imperialUnit=" °F"

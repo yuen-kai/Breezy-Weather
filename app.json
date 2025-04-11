@@ -10,10 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "icon":{
+      "icon": {
         "light": "./assets/images/iconIOSlight.png",
         "dark": "./assets/images/iconIOSdark.png",
         "tinted": "./assets/images/iconIOStint.png"
+      },
+      "bundleIdentifier": "com.yuenkai.breezy",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
