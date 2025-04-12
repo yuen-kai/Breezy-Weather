@@ -1,6 +1,5 @@
 // app/index.tsx
 import React, { useState, useEffect } from "react";
-import WeatherApiResponse from '../types/weather';
 import { getWeatherData, locationAutocomplete } from '../services/weatherApi';
 import * as Location from 'expo-location';
 import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl, AppState } from "react-native";
@@ -19,19 +18,18 @@ import { router, useNavigation } from "expo-router";
 import useSettingsStore from "../store/settingsStore";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
-import BoxRow from "@/components/boxRow";
-import DropDownPicker from 'react-native-dropdown-picker';
 import { TimeOfDay } from "@/types/timeOfDay";
-import { InfoRow, convertToScale } from "@/components/infoRow";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { InfoRow, convertToScale } from "@/components/InfoRow";
+import {TextRow} from "@/components/TextRow";
 import Animated, {
 	useSharedValue,
 	withTiming,
 	useAnimatedStyle,
 	Easing,
-	useAnimatedProps,
 } from 'react-native-reanimated';
 import { getAverage, weightPrecip, weightWind, weightVisibility, weightPrecipProb } from "@/functions/average";
+import { convertTemperature, convertWindSpeed, convertPrecip, convertVisibility } from "@/functions/conversions";
+import { ThemedDropDownPicker } from "@/components/ThemedDropDownPicker";
 
 let first = true;
 
@@ -61,9 +59,7 @@ const HomeScreen = () => {
 
 	const [error, setError] = useState<string | null>(null);
 
-	//Setup (settings, location, weather data)
-
-
+	//Get weather
 	async function fetchWeather(location?: string) {
 		try {
 			const data = await getWeatherData(location || locationCoords || locationName);
@@ -74,6 +70,7 @@ const HomeScreen = () => {
 		}
 	};
 
+	//Get Location
 	async function getCurrentLocation() {
 		let { status } = await Location.requestForegroundPermissionsAsync();
 		if (status !== 'granted') {
@@ -109,6 +106,7 @@ const HomeScreen = () => {
 		return Math.sqrt(Math.pow(parseFloat(coord1.split(",")[0]) - coord2lat, 2) + Math.pow(parseFloat(coord1.split(",")[1]) - coord2lon, 2));
 	}
 
+	//Get time of day
 	function getTimeOfDay(): TimeOfDay[] {
 		const h = new Date().getHours();
 		if (h >= 20 && h < 24) return ["night"];
@@ -120,7 +118,7 @@ const HomeScreen = () => {
 		return tempTimeOfDay;
 	}
 
-	//runs only once
+	//Set up
 	useEffect(() => {
 		if (!first) return
 		first = false;
@@ -128,7 +126,6 @@ const HomeScreen = () => {
 		setTimeOfDay(getTimeOfDay());
 	}, []);
 
-	//reload weather if app opened after 30 minutes
 	useEffect(() => {
 		const subscription = AppState.addEventListener('change', nextAppState => {
 			if (nextAppState === 'active' && new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
@@ -151,34 +148,22 @@ const HomeScreen = () => {
 		}
 	}
 
-	function getWeatherTimeOfDay() {
-		return weatherData?.forecast.forecastday[day]?.hour.filter(({ time }) => {
-			const h = new Date(time).getHours();
-			const curr = new Date().getHours();
+	//Set up weather arrays
+	const filteredWeather = weatherData?.forecast.forecastday[day]?.hour.filter(({ time }) => {
+		const h = new Date(time).getHours();
+		const curr = new Date().getHours();
 
-			return (day === 0 ? h >= curr : true) &&
-				timeOfDaySettings.some(setting =>
-					timeOfDay.includes(setting.label) && h >= setting.start && h < setting.end
-				);
-		});
-	}
-
-	const filteredWeather = getWeatherTimeOfDay();
+		return (day === 0 ? h >= curr : true) &&
+			timeOfDaySettings.some(setting =>
+				timeOfDay.includes(setting.label) && h >= setting.start && h < setting.end
+			);
+	});;
 	const dailyWeather = filteredWeather?.length == 0 && day != 0
 	const dayWeather = weatherData?.forecast.forecastday[day]
 	const weather = filteredWeather?.length > 0 ? filteredWeather : (day == 0 ? [weatherData?.current] : [dayWeather?.day]);
 
-	// const feelsLikeSelected = useSharedValue(0);
-	// const tempSelected = useSharedValue(0);
-	// const windSelected = useSharedValue(0);
-	// const precipProbSelected = useSharedValue(0);
-	// const precipSelected = useSharedValue(0);
-	// const humiditySelected = useSharedValue(0);
-	// const uvSelected = useSharedValue(0);
-	// const visibilitySelected = useSharedValue(0);
 
-
-	// Calculate current values
+	// Set up weather values
 	const feelsLikeTemps = weather?.map(curr => curr?.feelslike_f) ?? [];
 	const feelsLike = !dailyWeather ? getAverage(feelsLikeTemps) : weather?.[0]?.avgtemp_f;
 
@@ -214,8 +199,6 @@ const HomeScreen = () => {
 	const visibilityCutoffs = cutoffs["Visibility"];
 	const cloudCoverCutoffs = cutoffs["Cloud Cover"];
 
-
-	// Custom hook to track value changes with animated shared values
 	function useScaledValue(
 		value: number,
 		cutoffs: number[],
@@ -248,29 +231,8 @@ const HomeScreen = () => {
 	let animatedVisibilityProps = useScaledValue(visibility, visibilityCutoffs);
 	let animatedCloudProps = useScaledValue(cloudCover, cloudCoverCutoffs);
 
-
+	const tempLabels = ["freezing", "cold", "mild", "warm", "hot"]
 	const windLabels = ["calm", "breezy", "windy"];
-
-	interface TextRowProps {
-		label: string;
-		value: string;
-	}
-
-	const TextRow: React.FC<TextRowProps> = ({
-		label,
-		value
-	}) => {
-		return (
-			<View style={styles.infoRow}>
-				<Text variant="bodyLarge" style={{ flex: 2.2 }}>
-					{label}:
-				</Text>
-				<Text variant="bodyLarge" style={[styles.infoColn, { flex: 3.2 + 1.3 }]}>
-					{value}
-				</Text>
-			</View>
-		);
-	};
 
 	return (
 		<View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -283,7 +245,7 @@ const HomeScreen = () => {
 			} >
 				{/* Location picker */}
 				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-					<DropDownPicker
+					<ThemedDropDownPicker
 						listMode="SCROLLVIEW"
 						open={dropdownOpen}
 						setOpen={setDropdownOpen}
@@ -362,47 +324,6 @@ const HomeScreen = () => {
 						}}
 
 						containerStyle={{ flex: 1 }}
-						style={{
-							backgroundColor: theme.colors.elevation.level1,
-							borderColor: theme.colors.outline, // Primary color for border
-						}}
-						textStyle={{
-							color: theme.colors.onSurface, // Adapts to dark mode
-						}}
-						dropDownContainerStyle={{
-							backgroundColor: theme.colors.elevation.level1, // Dropdown background
-							borderColor: theme.colors.outline,
-						}}
-						placeholderStyle={{
-							color: theme.colors.onSurfaceDisabled, // Muted text color
-						}}
-						arrowIconStyle={{
-							tintColor: theme.colors.onSurface, // Arrow color
-						}}
-						listItemLabelStyle={{
-							color: theme.colors.onSurface,
-							fontSize: 16,
-						}}
-						listItemLabelStyleActive={{
-							color: theme.colors.onSurface,
-							fontWeight: "bold",
-						}}
-						tickIconStyle={{
-							tintColor: theme.colors.onSurface,
-						}}
-						// Search bar container
-						searchContainerStyle={{
-							borderBottomColor: theme.colors.outline,
-							borderBottomWidth: 1,
-						}}
-
-						// Search input text
-						searchTextInputStyle={{
-							color: theme.colors.onSurface,
-							borderRadius: theme.roundness,
-							borderColor: theme.colors.outline,
-							fontSize: 16,
-						}}
 						searchPlaceholder="Search location"
 					/>
 					<IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
@@ -415,7 +336,7 @@ const HomeScreen = () => {
 				<SegmentedButtons
 					style={{ marginTop: 16, marginBottom: !error ? 32 : 16 }}
 					value={timeOfDay}
-					onValueChange={(value) => { setTimeOfDay(value) }}
+					onValueChange={(value) => { setTimeOfDay(value as TimeOfDay[]) }}
 					buttons={timeOfDaySettings.map(setting => ({
 						value: setting.label,
 						label: setting.displayName,
@@ -445,8 +366,9 @@ const HomeScreen = () => {
 								label="Feels like"
 								value={feelsLike}
 								valuesArray={feelsLikeTemps}
+								metricConversion={convertTemperature}
 								cutoffs={tempCutoffs}
-								textArray={["freezing", "cold", "mild", "warm", "hot"]}
+								textArray={tempLabels}
 								imperialUnit=" °F"
 								metricUnit=" °C"
 								animatedProps={animatedFeelsLikeProps}
@@ -475,8 +397,9 @@ const HomeScreen = () => {
 								label="Temp"
 								value={temp}
 								valuesArray={temps}
+								metricConversion={convertTemperature}
 								cutoffs={tempCutoffs}
-								textArray={["freezing", "cold", "mild", "warm", "hot"]}
+								textArray={tempLabels}
 								imperialUnit=" °F"
 								metricUnit=" °C"
 							/>
@@ -485,6 +408,7 @@ const HomeScreen = () => {
 								label="Wind"
 								value={wind}
 								valuesArray={windSpeeds}
+								metricConversion={convertWindSpeed}
 								cutoffs={windCutoffs}
 								textArray={windLabels}
 								imperialUnit=" mph"
@@ -495,6 +419,7 @@ const HomeScreen = () => {
 									animatedProps={animatedWindGustsProps}
 									label="Wind Gusts"
 									value={windGusts}
+									metricConversion={convertWindSpeed}
 									cutoffs={windCutoffs}
 									textArray={windLabels}
 									imperialUnit=" mph"
@@ -516,6 +441,7 @@ const HomeScreen = () => {
 									label={temp < 32 ? "Snow" : "Rain"}
 									value={precip}
 									valuesArray={precipInches}
+									metricConversion={convertPrecip}
 									cutoffs={precipCutoffs}
 									textArray={["drizzle", "shower", "downpour"]}
 									imperialUnit=" in/hr"
@@ -539,6 +465,7 @@ const HomeScreen = () => {
 											label="Wind Gusts"
 											value={windGusts ? windGusts : wind}
 											cutoffs={windCutoffs}
+											metricConversion={convertWindSpeed}
 											textArray={windLabels}
 											imperialUnit=" mph"
 											metricUnit=" kph" />
@@ -567,6 +494,7 @@ const HomeScreen = () => {
 										label="Visibility"
 										value={visibility}
 										valuesArray={visibilities}
+										metricConversion={convertVisibility}
 										cutoffs={visibilityCutoffs}
 										textArray={["foggy", "misty", "clear"]}
 										imperialUnit=" mi"
@@ -606,7 +534,7 @@ const HomeScreen = () => {
 							showsHorizontalScrollIndicator={false}
 							contentContainerStyle={{ marginBottom: 30, paddingHorizontal: 8 }}
 							contentOffset={{
-								x: day !== 0 ? 152 * timeOfDaySettings.find(setting => timeOfDay.includes(setting.label))?.start : 0,
+								x: day !== 0 ? 152 * (timeOfDaySettings.find(setting => timeOfDay.includes(setting.label))?.start??0) : 0,
 								y: 0
 							}}
 						>
@@ -678,16 +606,6 @@ const styles = StyleSheet.create({
 	},
 	divider: {
 		marginVertical: 8,
-	},
-	infoColn: {
-		flexDirection: "column",
-		marginVertical: 2,
-	},
-	infoRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		marginVertical: 2,
 	},
 	sectionTitle: {
 		marginTop: 24,

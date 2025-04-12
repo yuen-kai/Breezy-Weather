@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, IconButton } from "react-native-paper";
-import BoxRow from "@/components/boxRow";
+import BoxRow from "@/components/BoxRow";
 import { useAppTheme } from "@/theme";
 import useSettingsStore from "@/store/settingsStore";
 import { getAverage } from "@/functions/average";
@@ -15,6 +15,7 @@ interface InfoRowProps {
   imperialUnit: string;
   metricUnit: string;
   valuesArray: number[];
+  metricConversion?: (value: number) => number;
   selectedBox?: number;
   hasZeroValue?: boolean;
   zeroText?: string;
@@ -37,6 +38,7 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
       imperialUnit,
       metricUnit,
       valuesArray = [],
+      metricConversion,
       selectedBox,
       hasZeroValue,
       zeroText,
@@ -82,44 +84,9 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
       return drasticChangeMessage1;
     }
 
-    function convertTemperature(temp: number): number {
-      return unit === "imperial" ? temp : (temp - 32) * (5 / 9);
-    }
-
-    function convertWindSpeed(speed: number): number {
-      return unit === "imperial" ? speed : speed * 1.60934;
-    }
-
-    function convertPrecip(precip: number): number {
-      return unit === "imperial" ? precip : precip * 2.54;
-    }
-
-    function convertVisibility(vis: number): number {
-      return unit === "imperial" ? vis : vis * 1.60934;
-    }
-
-    function roundWeatherValue(label: string, value: number) {
-      switch (label) {
-        case "Feels like":
-        case "Temp":
-          value = unit === "imperial" ? value : convertTemperature(value);
-          break;
-        case "Wind":
-        case "Wind Gusts":
-          value = unit === "imperial" ? value : convertWindSpeed(value);
-          break;
-        case "Precip Inches":
-          value = unit === "imperial" ? value : convertPrecip(value);
-          break;
-        case "Visibility":
-          value = unit === "imperial" ? value : convertVisibility(value);
-          break;
-        case "Humidity":
-        case "UV Index":
-        case "Cloud Cover":
-        default:
-          break;
-      }
+    function roundWeatherValue(value: number) {
+      value =
+        unit === "metric" && metricConversion ? metricConversion(value) : value;
 
       // Round to max precision 2
       if (value > 10) return Math.round(value);
@@ -167,7 +134,11 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
             maxBoxIndex !== undefined &&
             maxBoxIndex - minBoxIndex >= 2 && (
               <Tooltip
-                popover={<Text style={{color: theme.colors.surface}}>{getDrasticChangeMessage()}</Text>}
+                popover={
+                  <Text style={{ color: theme.colors.surface }}>
+                    {getDrasticChangeMessage()}
+                  </Text>
+                }
                 visible={open}
                 onOpen={() => setOpen(true)}
                 onClose={() => setOpen(false)}
