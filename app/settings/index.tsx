@@ -14,7 +14,7 @@ import {
   Portal
 } from 'react-native-paper';
 import { useAppTheme } from "@/theme";
-import useSettingsStore, { UnitType } from '../../store/settingsStore';
+import useSettingsStore, { UnitType } from '../../store/store';
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';

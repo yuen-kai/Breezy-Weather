@@ -2,10 +2,10 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { Text} from "react-native-paper";
+import { Text } from "react-native-paper";
 import { useAppTheme } from "../theme";
 import { ClothingItem } from "@/types/clothing";
-import useSettingsStore from "@/store/settingsStore";
+import useSettingsStore from "@/store/store";
 import { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
 
 interface ClothingSuggestionProps {
@@ -15,16 +15,16 @@ interface ClothingSuggestionProps {
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
-	 temperature, textWidth, textVariant = "bodyLarge"
+	temperature,
+	textWidth,
+	textVariant = "bodyLarge",
 }) => {
 	const theme = useAppTheme();
 	const { clothingItems } = useSettingsStore();
 
 	// Find the first clothing item that matches the temperature range given a sorted list
-	const suggestion: ClothingItem = clothingItems.find(
-		(item) =>
-			temperature < item.temperatureRange[1]
-	) ?? clothingItems[-1];
+	const suggestion: ClothingItem =
+		clothingItems.find((item) => temperature < item.temperatureRange[1]) ?? clothingItems[-1];
 
 	return (
 		<View style={styles.container}>
@@ -36,10 +36,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 					{suggestion.image && (
 						<Image
 							source={suggestion.image}
-							style={[
-								styles.icon,
-								suggestion.tint && { tintColor: theme.colors.onBackground }
-							]}
+							style={[styles.icon, suggestion.tint && { tintColor: theme.colors.onBackground }]}
 							contentFit="contain"
 						/>
 					)}
@@ -60,7 +57,7 @@ const styles = StyleSheet.create({
 	icon: {
 		flex: 1,
 		marginTop: 8,
-		width: '100%',
+		width: "100%",
 	},
 	windText: {
 		marginTop: 4,

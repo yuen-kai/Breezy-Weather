@@ -1,72 +1,69 @@
 // app/components/HourlyWeatherCard.tsx
-import React from 'react';
-import { StyleSheet, View, Image } from 'react-native';
-import { Card, Text } from 'react-native-paper';
-import useSettingsStore from '../store/settingsStore';
-import ClothingSuggestion from './ClothingSuggestion';
+import React from "react";
+import { StyleSheet, View, Image } from "react-native";
+import { Card, Text } from "react-native-paper";
+import useSettingsStore from "../store/store";
+import ClothingSuggestion from "./ClothingSuggestion";
 
 interface HourlyWeatherCardProps {
-  time: string;
-  overallScale: number;
-  feelsLike: number;
-  windSpeed: number;
-  conditionIcon: string;
+	time: string;
+	overallScale: number;
+	feelsLike: number;
+	windSpeed: number;
+	conditionIcon: string;
 }
 
 const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
-  time,
-  overallScale,
-  feelsLike,
-  windSpeed,
-  conditionIcon
+	time,
+	overallScale,
+	feelsLike,
+	windSpeed,
+	conditionIcon,
 }) => {
-  const { scale, unit } = useSettingsStore();
 
-  return (
-    <Card style={styles.container}>
-      <Card.Content>
-        <Text variant="titleMedium" style={styles.timeText}>
-          {time}
-        </Text>
-        <ClothingSuggestion temperature={feelsLike} textWidth={140}/>
-        <Image
-          source={{ uri: `https:${conditionIcon}` }}
-          style={styles.icon}
-          resizeMode="contain"
-        />
-        <Text variant="bodyMedium" style={{textAlign:'center'}}>Feels like: {overallScale}/5</Text>
-      </Card.Content>
-    </Card>
-  );
+	return (
+		<Card style={styles.container}>
+			<Card.Content>
+				<Text variant="titleMedium" style={styles.timeText}>
+					{time}
+				</Text>
+				<ClothingSuggestion temperature={feelsLike} textWidth={140} />
+				<Image source={{ uri: `https:${conditionIcon}` }} style={styles.icon} resizeMode="contain" />
+				<Text variant="bodyMedium" style={{ textAlign: "center" }}>
+					Feels like: {overallScale}/5
+				</Text>
+			</Card.Content>
+		</Card>
+	);
 };
 
 const styles = StyleSheet.create({
-  container: {
-    margin: 6,
-    width: 140,
-    alignItems: 'center',
-    padding: 8,
-    height: 350,
-  },
-  timeText: {
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  icon: {
-    flex:.5,
-    aspectRatio: 1,
-    alignSelf: 'center',
-  },
-  tempText: {
-    marginTop: 4,
-  },
-  conditionText: {
-    textAlign: 'center',
-  },
-  additionalInfo: {
-    marginTop: 8,
-    alignItems: 'flex-start',
-  },
+	container: {
+		margin: 6,
+		width: 140,
+		alignItems: "center",
+		padding: 8,
+		height: 350,
+	},
+	timeText: {
+		textAlign: "center",
+		marginBottom: 4,
+	},
+	icon: {
+		flex: 0.5,
+		aspectRatio: 1,
+		alignSelf: "center",
+	},
+	tempText: {
+		marginTop: 4,
+	},
+	conditionText: {
+		textAlign: "center",
+	},
+	additionalInfo: {
+		marginTop: 8,
+		alignItems: "flex-start",
+	},
 });
 
 export default HourlyWeatherCard;

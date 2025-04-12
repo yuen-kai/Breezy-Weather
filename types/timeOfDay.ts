@@ -7,7 +7,6 @@ export interface TimeOfDaySetting {
     end: number;
 }
 
-
 export const defaultTimeOfDaySettings: TimeOfDaySetting[] = [
     { label: 'earlyMorning', displayName: "Early", start: 0, end: 7 },
     { label: 'morning', displayName: "Morning",  start: 7, end: 11 },
