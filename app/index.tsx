@@ -377,7 +377,7 @@ const HomeScreen = () => {
 				<Text variant="headlineMedium" style={{ textAlign: "center", marginTop: 16 }}>
 					{day == 0 ? "Today" : day == 1 ? "Tomorrow" : "Day After Tomorrow"}
 				</Text>
-
+				
 				{/* Time of Day Selector */}
 				<SegmentedButtons
 					style={{ marginTop: 16, marginBottom: !error ? 32 : 16 }}
