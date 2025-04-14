@@ -30,7 +30,7 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
 		<View style={styles.container}>
 			{suggestion ? (
 				<>
-					<Text variant={textVariant} style={{ width: textWidth, textAlign: "center" }}>
+					<Text variant={textVariant} style={{ width: textWidth, textAlign: "center", padding: 4 }}>
 						Suggested: {suggestion.name}
 					</Text>
 					{suggestion.image && (

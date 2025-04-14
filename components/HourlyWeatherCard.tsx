@@ -1,9 +1,10 @@
 // app/components/HourlyWeatherCard.tsx
 import React from "react";
 import { StyleSheet, View, Image } from "react-native";
-import { Card, Text } from "react-native-paper";
+import { Card, Text, useTheme } from "react-native-paper";
 import useSettingsStore from "../store/store";
 import ClothingSuggestion from "./ClothingSuggestion";
+import { checkIfInTimeOfDay } from "../functions/timeOfDayFunctions";
 
 interface HourlyWeatherCardProps {
 	time: string;
@@ -11,6 +12,7 @@ interface HourlyWeatherCardProps {
 	feelsLike: number;
 	windSpeed: number;
 	conditionIcon: string;
+	day: number;
 }
 
 const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
@@ -19,13 +21,32 @@ const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
 	feelsLike,
 	windSpeed,
 	conditionIcon,
+	day,
 }) => {
+	const theme = useTheme();
+	const { timeOfDaySettings, timeOfDay } = useSettingsStore();
 
 	return (
-		<Card style={styles.container}>
+		<Card
+			style={{
+				margin: 6,
+				width: 140,
+				alignItems: "center",
+				padding: 8,
+				height: 350,
+				borderWidth: checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? 1 : 0,
+				// backgroundColor: checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? theme.colors.elevation.level2 : theme.colors.elevation.level1 ,
+			}}
+			// mode={checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? "elevated" : "contained"}
+			// elevation={2}
+		>
 			<Card.Content>
 				<Text variant="titleMedium" style={styles.timeText}>
-					{time}
+					{new Date(time).toLocaleTimeString([], {
+						hour: "2-digit",
+						minute: "2-digit",
+						hour12: true,
+					})}
 				</Text>
 				<ClothingSuggestion temperature={feelsLike} textWidth={140} />
 				<Image source={{ uri: `https:${conditionIcon}` }} style={styles.icon} resizeMode="contain" />
@@ -38,13 +59,6 @@ const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-	container: {
-		margin: 6,
-		width: 140,
-		alignItems: "center",
-		padding: 8,
-		height: 350,
-	},
 	timeText: {
 		textAlign: "center",
 		marginBottom: 4,
