@@ -5,13 +5,11 @@ import { useAppTheme } from "@/theme";
 export const ThemedDropDownPicker: React.FC<DropDownPickerProps<any>> = (props) => {
 	const theme = useAppTheme();
 
-	const [open, setOpen] = React.useState(false);
 
 	return (
 		<DropDownPicker
 			{...props}
-			open={open}
-			setOpen={setOpen}
+			
 			style={[
 				{
 					backgroundColor: theme.colors.elevation.level1,
@@ -22,6 +20,7 @@ export const ThemedDropDownPicker: React.FC<DropDownPickerProps<any>> = (props) 
 			textStyle={[
 				{
 					color: theme.colors.onSurface,
+					fontSize: 15,
 				},
 				props.textStyle,
 			]}
@@ -47,7 +46,7 @@ export const ThemedDropDownPicker: React.FC<DropDownPickerProps<any>> = (props) 
 			listItemLabelStyle={[
 				{
 					color: theme.colors.onSurface,
-					fontSize: 16,
+					fontSize: 15,
 				},
 				props.listItemLabelStyle,
 			]}
@@ -69,7 +68,7 @@ export const ThemedDropDownPicker: React.FC<DropDownPickerProps<any>> = (props) 
 					color: theme.colors.onSurface,
 					borderRadius: theme.roundness,
 					borderColor: theme.colors.outline,
-					fontSize: 16,
+					fontSize: 15,
 				},
 				props.searchTextInputStyle,
 			]}

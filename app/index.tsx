@@ -2,7 +2,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getWeatherData, locationAutocomplete } from "../services/weatherApi";
 import * as Location from "expo-location";
-import { View, StyleSheet, ScrollView, Image, Alert, RefreshControl, AppState } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Alert,
+  RefreshControl,
+  AppState,
+  TouchableOpacity,
+} from "react-native";
 import {
   Text,
   Button,
@@ -66,15 +75,11 @@ const HomeScreen = () => {
     removePinnedLocation,
   } = useSettingsStore();
 
-  const [options, setOptions] = useState(false);
   const [locationName, setLocationName] = useState("Boston, Massachusetts");
   const [locationCoords, setLocationCoords] = useState<string>("");
-  const [locationItems, setLocationItems] = useState<{ label: string; value: string }[]>([
-    { label: "Boston, Massachusetts", value: "Boston, Massachusetts" },
-    { label: "New York, New York", value: "New York, New York" },
-    { label: "Los Angeles, California", value: "Los Angeles, California" },
-  ]);
+  const [locationItems, setLocationItems] = useState<{ label: string; value: string }[]>([]);
   const [dropDownLoading, setDropdownLoading] = useState(false);
+  const [open, setOpen] = React.useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -221,7 +226,7 @@ const HomeScreen = () => {
   const uvs = weather?.map((curr) => curr?.uv) ?? [];
   const uv = !dailyWeather ? getAverage(uvs) : weather?.[0]?.uv;
   const visibilities = weather?.map((curr) => curr?.vis_miles) ?? [];
-  const visibility = !dailyWeather ? weightVisibility(visibilities) : weather[0]?.avgvis_miles;
+  const visibility = !dailyWeather ? weightVisibility(visibilities) : weather?.[0]?.avgvis_miles;
 
   const conditionIcon =
     day === 0 ? weatherData?.current.condition.icon : dayWeather?.day.condition.icon;
@@ -278,11 +283,19 @@ const HomeScreen = () => {
 
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const togglePinnedLocation = (locationName: string) => {
+    if (pinnedLocations.some((loc) => loc.value === locationName)) {
+      removePinnedLocation({ label: locationName, value: locationName });
+    } else {
+      addPinnedLocation({ label: locationName, value: locationName });
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Appbar.Header>
-        <Appbar.Content title="Breezy" onPress={() => setOptions(!options)} />
-        <Appbar.Action icon="cog" onPress={() => navigation.navigate("settings/index")} />
+        <Appbar.Content title="Breezy" />
+        <Appbar.Action icon="cog" onPress={() => navigation.navigate("settings/index" as never)} />
       </Appbar.Header>
       <ScrollView
         style={{ flex: 1, padding: 16 }}
@@ -292,14 +305,19 @@ const HomeScreen = () => {
         {/* Location picker */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <ThemedDropDownPicker
+            open={open}
+            setOpen={setOpen}
+            onClose={() => setLocationItems(pinnedLocations)}
             listMode="SCROLLVIEW"
             value={locationName}
             searchable
             items={
-              locationItems.some((item) => item.label === locationName)
+              locationItems.length == 0
+                ? pinnedLocations
+                : locationItems.some((item) => item.label === locationName)
                 ? locationItems
                 : [{ label: locationName, value: locationName }, ...locationItems]
-            } // Add current location to items if it's not already there
+            } // Add current location to items if it's not already there (needed for selected value box to work)
             setItems={setLocationItems}
             setValue={(value) => {
               setLocationName(value);
@@ -309,6 +327,43 @@ const HomeScreen = () => {
             onSelectItem={(item) => fetchWeather(item.value)}
             disableLocalSearch={true} // required for remote search
             loading={dropDownLoading}
+            renderListItem={(item) => (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 8,
+                  backgroundColor:
+                    item.label === locationName
+                      ? theme.colors.secondaryContainer
+                      : theme.colors.elevation.level1,
+                }}
+                onPress={() => {
+                  setLocationName(item.value);
+                  setLocationCoords("");
+                  setLocationItems(pinnedLocations);
+                  fetchWeather(item.value);
+                  setOpen(false);
+                }}
+              >
+                <Text variant="bodyLarge" style={{ fontSize: 15 }}>
+                  {item.label}
+                </Text>
+                <IconButton
+                  icon={
+                    pinnedLocations.some((loc) => loc.value === item.value) ? "pin" : "pin-outline"
+                  }
+                  size={16}
+                  onPress={() => togglePinnedLocation(item.value)}
+                  iconColor={
+                    pinnedLocations.some((loc) => loc.value === item.value)
+                      ? theme.colors.primary
+                      : theme.colors.onSurfaceDisabled
+                  }
+                />
+              </TouchableOpacity>
+            )}
             onChangeSearchText={(text) => {
               // Show the loading animation
               setDropdownLoading(true);
@@ -350,18 +405,6 @@ const HomeScreen = () => {
                       return {
                         label: locationString,
                         value: locationString,
-                        // icon: () => (
-                        // 	<IconButton
-                        // 		icon="pin"
-                        // 		size={16}
-                        // 		onPress={() => pinnedLocations.some(loc => loc.value === locationString)
-                        // 			? removePinnedLocation({ label: locationString, value: locationString })
-                        // 			: addPinnedLocation({ label: locationString, value: locationString })}
-                        // 		iconColor={pinnedLocations.some(loc => loc.value === locationString)
-                        // 			? theme.colors.primary
-                        // 			: theme.colors.onSurfaceDisabled}
-                        // 	/>
-                        // )
                       };
                     })
                   );
@@ -461,6 +504,7 @@ const HomeScreen = () => {
                 imperialUnit=" °F"
                 metricUnit=" °C"
                 animatedProps={animatedFeelsLikeProps as React.RefAttributes<View>}
+                day={day}
               />
               <View
                 style={{
@@ -497,6 +541,7 @@ const HomeScreen = () => {
                 textArray={tempLabels}
                 imperialUnit=" °F"
                 metricUnit=" °C"
+                day={day}
               />
               <AnimatedInfoRow
                 animatedProps={animatedWindProps as React.RefAttributes<View>}
@@ -509,6 +554,7 @@ const HomeScreen = () => {
                 textArray={windLabels}
                 imperialUnit=" mph"
                 metricUnit=" kph"
+                day={day}
               />
               {day == 0 && windGusts > wind + 10 ? (
                 <AnimatedInfoRow
@@ -521,6 +567,7 @@ const HomeScreen = () => {
                   textArray={windLabels}
                   imperialUnit=" mph"
                   metricUnit=" kph"
+                  day={day}
                 />
               ) : null}
               <AnimatedInfoRow
@@ -533,6 +580,7 @@ const HomeScreen = () => {
                 textArray={["unlikely", "possible", "likely"]}
                 imperialUnit="%"
                 metricUnit="%"
+                day={day}
                 hasZeroValue={
                   !dayWeather?.day.daily_will_it_rain && !dayWeather?.day.daily_will_it_snow
                 }
@@ -550,6 +598,7 @@ const HomeScreen = () => {
                   textArray={["drizzle", "shower", "downpour"]}
                   imperialUnit=" in/hr"
                   metricUnit=" cm/hr"
+                  day={day}
                 />
               ) : null}
               {temp >= 60 ? (
@@ -562,6 +611,7 @@ const HomeScreen = () => {
                   textArray={["dry", "comfort", "sticky"]}
                   imperialUnit="%"
                   metricUnit="%"
+                  day={day}
                 />
               ) : null}
               {expanded ? (
@@ -577,6 +627,7 @@ const HomeScreen = () => {
                       textArray={windLabels}
                       imperialUnit=" mph"
                       metricUnit=" kph"
+                      day={day}
                     />
                   ) : null}
                   {temp < 60 ? (
@@ -589,6 +640,7 @@ const HomeScreen = () => {
                       textArray={["dry", "comfort", "sticky"]}
                       imperialUnit="%"
                       metricUnit="%"
+                      day={day}
                     />
                   ) : null}
                   <AnimatedInfoRow
@@ -612,6 +664,7 @@ const HomeScreen = () => {
                     textArray={["foggy", "misty", "clear"]}
                     imperialUnit=" mi"
                     metricUnit=" km"
+                    day={day}
                   />
                   {day == 0 && cloudCover ? (
                     <AnimatedInfoRow
@@ -622,6 +675,7 @@ const HomeScreen = () => {
                       textArray={["clear", "cloudy", "overcast"]}
                       imperialUnit="%"
                       metricUnit="%"
+                      day={day}
                     />
                   ) : null}
 

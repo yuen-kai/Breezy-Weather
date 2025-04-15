@@ -19,6 +19,7 @@ const Layout = () => {
 		setDarkMode,
 		setCutoffs,
 		setClothingItems,
+		setPinnedLocations,
 	} = useSettingsStore();
 
 	// SplashScreen.setOptions({
@@ -27,12 +28,13 @@ const Layout = () => {
 	// });
 
 	async function getSettings() {
-		const keys = ["unit", "darkMode", "cutoffs", "clothing"];
+		const keys = ["unit", "darkMode", "cutoffs", "clothing", "pinnedLocations"];
 		const defaults = {
 			unit: "imperial",
 			darkMode: false,
 			cutoffs: defaultCutoffs,
 			clothing: defaultClothingItems,
+			pinnedLocations: [],
 		};
 		try {
 			const results = await AsyncStorage.multiGet(keys);
@@ -51,6 +53,9 @@ const Layout = () => {
 							break;
 						case "clothing":
 							setClothingItems(JSON.parse(value));
+							break;
+						case "pinnedLocations":
+							setPinnedLocations(JSON.parse(value));
 							break;
 					}
 				} else {
@@ -75,7 +80,7 @@ const Layout = () => {
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
 			<Tabs>
 				<Tabs.Screen name="index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }} />
-				<Tabs.Screen name="settings/index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }} />
+				<Tabs.Screen name="settings/index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' }}} />
 			</Tabs>
 			<StatusBar style={darkMode ? "light" : "dark"} />
 		</PaperProvider>

@@ -18,12 +18,15 @@ export function adjustHourPrecipProb(hour: any): number {
 
 export function adjustHourPrecip(hour: any): number {
   if (!hour) return 0;
-  if (hour.condition.code > 1062 && hour.precip_in === 0) {
+  if (hour.condition.code < 1062 || [1135].includes(hour.condition.code)) {
+    return 0;
+  }
+  if (hour.precip_in === 0) {
     // Set minimum precipitation amount based on condition severity
     if (
       [
-        1030, 1063, 1066, 1069, 1072, 1150, 1153, 1180, 1183, 1198, 1204, 1210, 1213, 1240, 1249,
-        1255, 1261, 1273, 1279,
+        1030, 1063, 1066, 1069, 1072, 1087, 1150, 1153, 1180, 1183, 1198, 1204, 1210, 1213, 1240,
+        1249, 1255, 1261, 1273, 1279,
       ].includes(hour.condition.code)
     ) {
       return 0.05; // Very light precipitation
@@ -36,7 +39,7 @@ export function adjustHourPrecip(hour: any): number {
     } else if ([1171, 1192, 1195, 1246, 1222, 1225, 1117].includes(hour.condition.code)) {
       return 0.2; // Moderate to heavy precipitation
     } else {
-      console.log(hour.condition.code + " not sorted");
+      console.warn(hour.condition.code + " not sorted");
       return 0;
     }
   }

@@ -4,6 +4,7 @@ import { ClothingItem, defaultClothingItems } from '@/types/clothing';
 import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
 import WeatherApiResponse from '@/types/weather';
 import { TimeOfDay, TimeOfDaySetting, defaultTimeOfDaySettings } from '@/types/timeOfDay';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type UnitType = 'imperial' | 'metric';
 
@@ -25,6 +26,7 @@ interface SettingsStore {
   setTimeOfDaySettings: (timeOfDaySettings: TimeOfDaySetting[]) => void;
   setWeatherData: (data: WeatherApiResponse) => void;
   setLastRefresh: (lastRefresh: number) => void;
+  setPinnedLocations: (pinnedLocations: {label: string, value: string}[]) => void;
   addPinnedLocation: (location: {label: string, value: string}) => void;
   removePinnedLocation: (location: {label: string, value: string}) => void;
 }
@@ -47,8 +49,17 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   setTimeOfDaySettings: (timeOfDaySettings) => set(() => ({ timeOfDaySettings })),
   setWeatherData: (data) => set(() => ({ weatherData: data })),
   setLastRefresh: (lastRefresh) => set(() => ({ lastRefresh })),
-  addPinnedLocation: (location) => set((state) => ({ pinnedLocations: [...state.pinnedLocations, location] })),
-  removePinnedLocation: (location) => set((state) => ({ pinnedLocations: state.pinnedLocations.filter((loc) => loc.value !== location.value) })),
+  setPinnedLocations: (pinnedLocations) => set(() => ({ pinnedLocations })),
+  addPinnedLocation: (location) => set((state) => {
+    const newLocations = [...state.pinnedLocations, location];
+    AsyncStorage.setItem('pinnedLocations', JSON.stringify(newLocations));
+    return { pinnedLocations: newLocations };
+  }),
+  removePinnedLocation: (location) => set((state) => {
+    const newLocations = state.pinnedLocations.filter((loc) => loc.value !== location.value);
+    AsyncStorage.setItem('pinnedLocations', JSON.stringify(newLocations));
+    return { pinnedLocations: newLocations };
+  }),
 }));
 
 export default useSettingsStore;
