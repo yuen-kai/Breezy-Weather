@@ -52,6 +52,7 @@ import {
 import { ThemedDropDownPicker } from "@/components/ThemedDropDownPicker";
 import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
+import AlertRow from "../components/AlertRow";
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
@@ -317,8 +318,8 @@ const HomeScreen = () => {
                   ? pinnedLocations
                   : [{ label: locationName, value: locationName }, ...pinnedLocations]
                 : locationItems.some((item) => item.label === locationName)
-                  ? locationItems
-                  : [{ label: locationName, value: locationName }, ...locationItems]
+                ? locationItems
+                : [{ label: locationName, value: locationName }, ...locationItems]
             } // Add current location to items if it's not already there (needed for selected value box to work)
             setItems={setLocationItems}
             setValue={(value) => {
@@ -424,6 +425,13 @@ const HomeScreen = () => {
           />
           <IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
         </View>
+        {weatherData && weatherData.alerts.alert.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+            {weatherData?.alerts?.alert?.map((alert, index) => (
+              <AlertRow key={index} alert={alert} />
+            ))}
+          </View>
+        )}
         <View
           style={{
             flexDirection: "row",
