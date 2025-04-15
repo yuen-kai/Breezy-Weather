@@ -313,10 +313,12 @@ const HomeScreen = () => {
             searchable
             items={
               locationItems.length == 0
-                ? pinnedLocations
+                ? pinnedLocations.some((item) => item.label === locationName)
+                  ? pinnedLocations
+                  : [{ label: locationName, value: locationName }, ...pinnedLocations]
                 : locationItems.some((item) => item.label === locationName)
-                ? locationItems
-                : [{ label: locationName, value: locationName }, ...locationItems]
+                  ? locationItems
+                  : [{ label: locationName, value: locationName }, ...locationItems]
             } // Add current location to items if it's not already there (needed for selected value box to work)
             setItems={setLocationItems}
             setValue={(value) => {
