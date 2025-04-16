@@ -1,5 +1,6 @@
 import WeatherApiResponse from '../types/weather';
-import { WEATHER_API_KEY } from './apikey';
+
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY ?? require('./apikey').WEATHER_API_KEY;
 
 const getWeatherData = async (location: string): Promise<WeatherApiResponse> => {
   const url = `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${location}&days=14&aqi=no&alerts=yes`;

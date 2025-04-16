@@ -23,7 +23,7 @@ import {
   Tooltip,
 } from "react-native-paper";
 import { useAppTheme } from "../theme";
-import { router, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import useSettingsStore from "../store/store";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
@@ -60,7 +60,6 @@ const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
 const HomeScreen = () => {
   //States
   const theme = useAppTheme();
-  const navigation = useNavigation();
   const {
     unit,
     cutoffs,
@@ -291,7 +290,7 @@ const HomeScreen = () => {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
-        <Appbar.Action icon="cog" onPress={() => navigation.navigate("settings/index" as never)} />
+        <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
       </Appbar.Header>
       <ScrollView
         style={{ flex: 1, padding: 16 }}
@@ -437,8 +436,8 @@ const HomeScreen = () => {
         >
           <IconButton
             icon="chevron-left"
-            onPress={() => setDay(day - 1)}
-            disabled={day === 0}
+            onPress={() => setDay(Math.max(0, day - 1))}
+            disabled={day <= 0}
             size={30}
           />
           <Text variant="headlineMedium" style={{ textAlign: "center" }}>
@@ -453,7 +452,7 @@ const HomeScreen = () => {
           </Text>
           <IconButton
             icon="chevron-right"
-            onPress={() => setDay(day + 1)}
+            onPress={() => setDay(Math.min(weatherData?.forecast.forecastday.length - 1, day + 1))}
             disabled={weatherData != null && day === weatherData.forecast.forecastday.length - 1}
             size={30}
           />
@@ -745,7 +744,7 @@ const HomeScreen = () => {
           <Button
             mode="text"
             onPress={() => {
-              setDay(day - 1);
+              setDay(Math.max(0, day - 1));
             }}
             disabled={day === 0}
             style={{ flex: 1 }}
@@ -755,7 +754,7 @@ const HomeScreen = () => {
           <Button
             mode="text"
             onPress={() => {
-              setDay(day + 1);
+              setDay(Math.min(weatherData?.forecast.forecastday.length - 1, day + 1));
             }}
             disabled={day === weatherData?.forecast.forecastday.length - 1}
             style={{ flex: 1 }}
