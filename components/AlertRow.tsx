@@ -41,7 +41,7 @@ const AlertRow: React.FC<AlertRowProps> = ({ alert }) => {
     >
       <Card.Content>
         <Title style={{ color: getSeverityColor(), marginBottom: 4 }}>{alert.event}</Title>
-        <Paragraph style={{ fontSize: 12, color: '#757575', marginBottom: 8 }}>
+        <Paragraph style={{ fontSize: 12, color: '#757575' }}>
           {alert.headline}
         </Paragraph>
         <IconButton

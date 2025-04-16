@@ -146,13 +146,9 @@ const HomeScreen = () => {
   //Get time of day
   function getTimeOfDay(): TimeOfDay[] {
     const h = new Date().getHours();
-    if (h >= 20 && h < 24) return ["night"];
-    let tempTimeOfDay: TimeOfDay[] = [];
-    if (h < 7) tempTimeOfDay.push("earlyMorning");
-    if (h < 11) tempTimeOfDay.push("morning");
-    if (h < 15) tempTimeOfDay.push("noon");
-    if (h < 20) tempTimeOfDay.push("evening");
-    return tempTimeOfDay;
+    if (h < 7) return ["earlyMorning", "morning", "noon", "evening"];
+    if (h >= 20 && h < 24) return ["morning", "noon", "evening", "night"];
+    return ["morning", "noon", "evening"];
   }
 
   //Set up

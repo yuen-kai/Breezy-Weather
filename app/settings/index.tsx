@@ -178,7 +178,7 @@ const SettingsScreen = () => {
       color: theme.colors.onSurface,
     },
     temperatureInput: {
-      width: 60,
+      // width: 60,
       marginHorizontal: 4,
     },
     removeButton: {
@@ -271,7 +271,7 @@ const SettingsScreen = () => {
                     onEndEditing={() => saveSettings('cutoffs')}
                     mode="outlined"
                     keyboardType="numeric"
-                    style={{ flex: 1, marginHorizontal: 4 }}
+                    style={{ flex: 1, marginHorizontal: 4, fontSize: 13 }}
                   />))}
               </View>
             </View>
@@ -384,7 +384,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: "center" }}>
                 <Text variant="bodyLarge">Tint</Text>
-                <Switch value={tint} onValueChange={setTint} />
+                <Switch style={{marginTop: 5}} value={tint} onValueChange={setTint} />
               </View>
             </View>
             <View style={{ flex: 4 }}>
