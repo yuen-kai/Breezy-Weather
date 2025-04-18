@@ -15,4 +15,4 @@ Breezy makes checking the weather effortless with clear, easy-to-understand fore
 - **Completely Free**
 - **Accurate & Reliable** – Powered by weatherapi.com for up-to-date forecasts.
 
-Download Breezy today and make getting dressed effortless!
+Mobile app coming out soon
