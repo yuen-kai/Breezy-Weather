@@ -1,6 +1,6 @@
 # Breezy – Weather, Simplified.
 
-Breezy makes checking the weather effortless with clear, easy-to-understand forecasts. No guesswork, no clutter—just the essential details at a glance.
+Breezy is a weather app that makes checking the weather effortless with clear, easy-to-understand forecasts. No guesswork, no clutter—just the essential details at a glance.
 
 ## Why Choose Breezy?
 
