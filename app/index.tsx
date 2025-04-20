@@ -92,6 +92,23 @@ const HomeScreen = () => {
     try {
       const data = await getWeatherData(location || locationCoords || locationName);
       setLastRefresh(new Date().getTime());
+
+      // Check for and filter out duplicate alerts
+      const uniqueAlerts = data.alerts?.alert
+        ? data.alerts.alert.filter(
+            (alert, index, self) => index === self.findIndex((a) => a.headline === alert.headline)
+          )
+        : [];
+      data.alerts.alert = uniqueAlerts;
+      
+      for(const alert of data.alerts.alert) {
+        // Clean up alert messages
+        const cleanupFunction = (str: string) => str?.replace(/([^\n])\n([^\n])/g, '$1 $2').replace(/[ \t]+/g, ' ').trim();
+        alert.headline = cleanupFunction(alert.headline);
+        alert.desc = cleanupFunction(alert.desc);
+        alert.instruction = cleanupFunction(alert.instruction);
+      }
+
       setWeatherData(data);
     } catch (err) {
       setError((err as Error).message);
@@ -104,6 +121,7 @@ const HomeScreen = () => {
     if (status !== "granted") {
       return;
     }
+    const locationErrorMessage = "Failed to get your location.";
 
     try {
       // Get last known location while waiting for current position
@@ -120,9 +138,12 @@ const HomeScreen = () => {
       ) {
         setLocationDetails(currentLocation);
       }
+      if (error == locationErrorMessage) {
+        setError(null);
+      }
     } catch (error) {
       console.error("Error getting location:", error);
-      setError("Failed to get your location.");
+      setError(locationErrorMessage);
     }
   }
 
@@ -421,7 +442,7 @@ const HomeScreen = () => {
         </View>
         {weatherData && weatherData.alerts.alert.length > 0 && (
           <View style={{ marginTop: 16 }}>
-            {weatherData?.alerts?.alert?.map((alert, index) => (
+            {weatherData.alerts.alert.map((alert, index) => (
               <AlertRow key={index} alert={alert} />
             ))}
           </View>
