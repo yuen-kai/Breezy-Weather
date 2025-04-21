@@ -78,11 +78,7 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-			<Tabs>
-				<Tabs.Screen name="index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' } }} />
-				<Tabs.Screen name="settings/index" options={{ headerShown: false, href: null, tabBarStyle: { display: 'none' }}} />
-			</Tabs>
-			<StatusBar style={darkMode ? "light" : "dark"} />
+			<Slot />
 		</PaperProvider>
 	);
 };

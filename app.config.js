@@ -9,6 +9,13 @@ export default ({ config }) => ({
     ...config.android,
     package: getUniqueAndroidIdentifier(),
   },
+  plugins: [
+    ["expo-custom-assets", {
+      assetsPaths: [
+        "./assets/preload/",
+      ]
+    }],
+  ],
 });
 
 const IS_DEV = process.env.APP_VARIANT === "development";
