@@ -53,12 +53,11 @@ import { ThemedDropDownPicker } from "@/components/ThemedDropDownPicker";
 import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
 import AlertRow from "../components/AlertRow";
-import CustomSplashScreen from "../components/resources/SplashScreen";
+import CustomSplashScreen from "@/components/SplashScreen";
 import * as SplashScreen from 'expo-splash-screen';
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
-SplashScreen.hideAsync()
 
 const HomeScreen = () => {
   //States
@@ -312,11 +311,11 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {!weatherData && <CustomSplashScreen />}
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
-        <Appbar.Action icon="cog" onPress={() => router.navigate("/splashtest")} />
+        <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
       </Appbar.Header>
+      {/* {!weatherData && <CustomSplashScreen />} */}
       <ScrollView
         style={{ flex: 1, padding: 16 }}
         showsVerticalScrollIndicator={false}

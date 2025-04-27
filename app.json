@@ -46,7 +46,14 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-asset",
+        {
+          "assets": ["./assets/preload/splashScreen.mp4"]
+        }
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
