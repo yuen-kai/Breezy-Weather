@@ -17,7 +17,7 @@ export default function CustomSplashScreen() {
       backgroundColor: "#fff" 
     }}>
       <LottieView
-        source={require("../assets/images/splash.json")}
+        source={require("../assets/preload/splash.json")}
         style={{
           width: "60%",
           height: "60%",

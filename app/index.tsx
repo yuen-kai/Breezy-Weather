@@ -53,7 +53,7 @@ import { ThemedDropDownPicker } from "@/components/ThemedDropDownPicker";
 import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
 import AlertRow from "../components/AlertRow";
-import CustomSplashScreen from "../components/resources/SplashScreen";
+import CustomSplashScreen from "../components/SplashScreen";
 import * as SplashScreen from 'expo-splash-screen';
 
 let first = true;
