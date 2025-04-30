@@ -6,6 +6,7 @@ import { useAppTheme } from "@/theme";
 import useSettingsStore from "@/store/store";
 import { getAverage } from "@/functions/average";
 import { Tooltip } from "@rneui/themed";
+import { getDrasticChangeMessage, getSortedTimeOfDay } from "@/functions/drasticChange";
 
 interface InfoRowProps {
   label: string;
@@ -53,58 +54,23 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
     const { unit, timeOfDay, timeOfDaySettings } = useSettingsStore();
     const [open, setOpen] = React.useState(false);
 
-    function filterRain(values: number[]) {
-      return label === "Rain" || label === "Snow" ? values.filter((val) => val > 0) : values;
-    }
-
-    function findTimeOfDaySetting(time: string) {
-      return (
-        timeOfDaySettings.find((setting) => setting.label === time) ?? {
-          label: "",
-          start: 0,
-          end: 0,
-        }
-      );
-    }
-
-    let sortedTimeOfDay = [...timeOfDay];
-
-    function getDrasticChangeMessage() {
-      let drasticChangeMessage1 = "";
-      sortedTimeOfDay = [...timeOfDay].sort((a, b) => {
-        const aIndex = timeOfDaySettings.findIndex((setting) => setting.label === a);
-        const bIndex = timeOfDaySettings.findIndex((setting) => setting.label === b);
-        return aIndex - bIndex;
-      });
-      if (day == 0) {
-        sortedTimeOfDay = sortedTimeOfDay.filter(
-          (time) => new Date().getHours() < findTimeOfDaySetting(time).end
-        );
-      }
-      let counter = 0;
-      for (const time of sortedTimeOfDay) {
-        const timeOfDaySetting = findTimeOfDaySetting(time);
-        const values = valuesArray.slice(
-          counter,
-          counter +
-            Math.max(
-              timeOfDaySetting.end -
-                Math.max(timeOfDaySetting.start, day !== 0 ? 0 : new Date().getHours()),
-              0
-            )
-        );
-        // console.log(values);
-        const filteredValues = filterRain(values);
-        const average = filteredValues.length > 0 ? getWeightedAverage(filteredValues) : 0;
-
-        drasticChangeMessage1 += `${timeOfDaySetting.label}: ${
-          value == 0 && hasZeroValue ? zeroText : textArray[convertToScale(average, cutoffs)]
-        }\n`;
-
-        counter += timeOfDaySetting.end - timeOfDaySetting.start;
-      }
-      return drasticChangeMessage1;
-    }
+    const selectedIndex = convertToScale(value, cutoffs);
+    const sortedTimeOfDay = getSortedTimeOfDay(timeOfDay, timeOfDaySettings, day);
+    const drasticChangeMessage = getDrasticChangeMessage(
+      timeOfDaySettings,
+      valuesArray,
+      value,
+      cutoffs,
+      selectedIndex,
+      day,
+      hasZeroValue,
+      zeroText,
+      getWeightedAverage,
+      label,
+      convertToScale,
+      textArray,
+      sortedTimeOfDay
+    );
 
     function roundWeatherValue(value: number) {
       value = unit === "metric" && metricConversion != undefined ? metricConversion(value) : value;
@@ -113,15 +79,6 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
       return value.toPrecision(2);
     }
 
-    // Calculate indices based on min and max values
-    const minValue = Math.min(...filterRain(valuesArray));
-    const maxValue = Math.max(...filterRain(valuesArray));
-
-    const minBoxIndex = convertToScale(minValue, cutoffs);
-    const maxBoxIndex = convertToScale(maxValue, cutoffs);
-    const drasticChangeMessage = maxBoxIndex - minBoxIndex >= 2 ? getDrasticChangeMessage() : "";
-
-    let selectedIndex = convertToScale(value, cutoffs);
 
     return (
       <View style={styles.infoRow}>
@@ -155,7 +112,7 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
               visible={open}
               onOpen={() => setOpen(true)}
               onClose={() => setOpen(false)}
-              height={25 * sortedTimeOfDay.length + 15}
+              height={25 * timeOfDay.length + 15}
               width={140}
               backgroundColor={theme.colors.onSurface}
             >

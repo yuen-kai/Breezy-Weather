@@ -78,6 +78,7 @@ const Layout = () => {
 
 	return (
 		<PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
+      <StatusBar style={darkMode ? "light" : "dark"} />
 			<Slot />
 		</PaperProvider>
 	);

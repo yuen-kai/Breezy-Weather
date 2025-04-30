@@ -26,12 +26,12 @@ const AlertRow: React.FC<{ alert: WeatherApiResponse["alerts"]["alert"][0] }> = 
       day === 0
         ? ""
         : day === 1
-        ? "Tomorrow"
-        : date.toLocaleDateString(undefined, {
+        ? "Tomorrow "
+        : `${date.toLocaleDateString(undefined, {
             weekday: "long",
             month: "short",
             day: "numeric",
-          });
+          })} `;
 
     const timeString = date.toLocaleTimeString(undefined, {
       hour: "numeric",

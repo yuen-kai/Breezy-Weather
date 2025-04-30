@@ -315,7 +315,7 @@ const HomeScreen = () => {
       {!weatherData && <CustomSplashScreen />}
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
-        <Appbar.Action icon="cog" onPress={() => router.navigate("/splashtest")} />
+        <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
       </Appbar.Header>
       <ScrollView
         style={{ flex: 1, padding: 16 }}
@@ -610,9 +610,7 @@ const HomeScreen = () => {
                 imperialUnit="%"
                 metricUnit="%"
                 day={day}
-                hasZeroValue={
-                  !dayWeather?.day.daily_will_it_rain && !dayWeather?.day.daily_will_it_snow
-                }
+                hasZeroValue={precipProbs.every(prob => prob === 0)}
                 zeroText="none"
               />
               {precipProb > 0 || precip > 0 ? (
