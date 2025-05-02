@@ -131,6 +131,7 @@ const HomeScreen = () => {
   async function getCurrentLocation() {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
+      setError("Turn on location permissions to get your current location.");
       return;
     }
     const locationErrorMessage = "Failed to get your location.";

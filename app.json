@@ -19,7 +19,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to show the weather for your current area.",
-        "NSLocationWhenInUseUsageDescription": "We use your location to show the weather for your current area."
+        "NSLocationWhenInUseUsageDescription": "We use your location to show the weather for your current area.",
+        "NSLocationAlwaysUsageDescription": "We use your location to show the weather for your current area."
       }
     },
     "android": {
@@ -48,7 +49,15 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "We use your location to show the weather for your current area.",
+          "locationWhenInUsePermission": "We use your location to show the weather for your current area.",
+          "locationAlwaysPermission": "We use your location to show the weather for your current area."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
