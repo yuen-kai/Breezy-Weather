@@ -17,7 +17,9 @@
       },
       "bundleIdentifier": "com.yuenkai.breezy",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to show the weather for your current area.",
+        "NSLocationWhenInUseUsageDescription": "We use your location to show the weather for your current area."
       }
     },
     "android": {

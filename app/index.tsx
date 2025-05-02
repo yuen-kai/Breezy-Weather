@@ -54,11 +54,11 @@ import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
 import AlertRow from "../components/AlertRow";
 import CustomSplashScreen from "../components/SplashScreen";
-import * as SplashScreen from 'expo-splash-screen';
+import * as SplashScreen from "expo-splash-screen";
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
-SplashScreen.hideAsync()
+SplashScreen.hideAsync();
 
 const HomeScreen = () => {
   //States
@@ -103,14 +103,23 @@ const HomeScreen = () => {
           )
         : [];
       data.alerts.alert = uniqueAlerts;
-      
-      for(const alert of data.alerts.alert) {
+
+      for (const alert of data.alerts.alert) {
         // Clean up alert messages
-        const cleanupFunction = (str: string) => str?.replace(/([^\n])\n([^\n])/g, '$1 $2').replace(/[ \t]+/g, ' ').trim();
+        const cleanupFunction = (str: string) =>
+          str
+            ?.replace(/([^\n])\n([^\n])/g, "$1 $2")
+            .replace(/[ \t]+/g, " ")
+            .trim();
         alert.headline = cleanupFunction(alert.headline);
         alert.desc = cleanupFunction(alert.desc);
         alert.instruction = cleanupFunction(alert.instruction);
       }
+
+      // Remove outdated alerts
+      data.alerts.alert = data.alerts.alert.filter(
+        (alert) => new Date(alert.expires).getTime() > Date.now()
+      );
 
       setWeatherData(data);
     } catch (err) {
@@ -610,7 +619,7 @@ const HomeScreen = () => {
                 imperialUnit="%"
                 metricUnit="%"
                 day={day}
-                hasZeroValue={precipProbs.every(prob => prob === 0)}
+                hasZeroValue={precipProbs.every((prob) => prob === 0)}
                 zeroText="none"
               />
               {precipProb > 0 || precip > 0 ? (
