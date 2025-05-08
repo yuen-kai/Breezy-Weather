@@ -1,8 +1,11 @@
 import React from "react";
 import LottieView from "lottie-react-native";
 import { View } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
 
 export default function CustomSplashScreen() {
+  SplashScreen.hideAsync();
+  
   return (
     <View style={{ 
       flex: 1, 

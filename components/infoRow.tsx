@@ -1,11 +1,11 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Text, IconButton } from "react-native-paper";
+import { Text } from "react-native-paper";
 import BoxRow from "@/components/BoxRow";
 import { useAppTheme } from "@/theme";
 import useSettingsStore from "@/store/store";
 import { getAverage } from "@/functions/average";
-import { Tooltip } from "@rneui/themed";
+import DrasticChangeTooltip from "./DrasticChangeTooltip";
 import { getDrasticChangeMessage, getSortedTimeOfDay } from "@/functions/drasticChange";
 
 interface InfoRowProps {
@@ -50,9 +50,7 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
     },
     ref
   ) => {
-    const theme = useAppTheme();
     const { unit, timeOfDay, timeOfDaySettings } = useSettingsStore();
-    const [open, setOpen] = React.useState(false);
 
     const selectedIndex = convertToScale(value, cutoffs);
     const sortedTimeOfDay = getSortedTimeOfDay(timeOfDay, timeOfDaySettings, day);
@@ -107,21 +105,11 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
             </Text>
           </View>
           {drasticChangeMessage && (
-            <Tooltip
-              popover={<Text style={{ color: theme.colors.surface }}>{drasticChangeMessage}</Text>}
-              visible={open}
-              onOpen={() => setOpen(true)}
-              onClose={() => setOpen(false)}
-              height={25 * timeOfDay.length + 15}
-              width={140}
-              backgroundColor={theme.colors.onSurface}
-            >
-              <IconButton
-                icon="swap-vertical-bold"
-                iconColor={theme.colors.error}
-                style={{ height: 30, aspectRatio: 1 }}
-              />
-            </Tooltip>
+            <DrasticChangeTooltip
+              message={drasticChangeMessage}
+              sortedTimeOfDay={sortedTimeOfDay}
+              width={150}
+            />
           )}
         </View>
 

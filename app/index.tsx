@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  Alert,
   RefreshControl,
   AppState,
   TouchableOpacity,
@@ -20,7 +19,6 @@ import {
   Appbar,
   SegmentedButtons,
   IconButton,
-  Tooltip,
 } from "react-native-paper";
 import { useAppTheme } from "../theme";
 import { router } from "expo-router";
@@ -35,6 +33,8 @@ import Animated, {
   withTiming,
   useAnimatedStyle,
   Easing,
+  interpolate,
+  withSpring,
 } from "react-native-reanimated";
 import {
   getAverage,
@@ -54,11 +54,10 @@ import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
 import AlertRow from "../components/AlertRow";
 import CustomSplashScreen from "../components/SplashScreen";
-import * as SplashScreen from "expo-splash-screen";
+import ExpandableContent from "../components/ExpandableContent";
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
-SplashScreen.hideAsync();
 
 const HomeScreen = () => {
   //States
@@ -135,7 +134,6 @@ const HomeScreen = () => {
       return;
     }
     const locationErrorMessage = "Failed to get your location.";
-
     try {
       // Get last known location while waiting for current position
       let lastLocation = await Location.getLastKnownPositionAsync();
@@ -322,7 +320,7 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {!weatherData && <CustomSplashScreen />}
+      {!weatherData ? <CustomSplashScreen /> : null}
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
         <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
@@ -530,7 +528,7 @@ const HomeScreen = () => {
               {/* Clothing Suggestion */}
               {feelsLike !== undefined && (
                 <View style={{ height: 200 }}>
-                  <ClothingSuggestion temperature={feelsLike} textVariant="titleLarge" />
+                  <ClothingSuggestion temperature={feelsLike} textVariant="titleLarge" valuesArray={feelsLikeTemps} day={day} />
                 </View>
               )}
               <AnimatedInfoRow
@@ -651,82 +649,73 @@ const HomeScreen = () => {
                   day={day}
                 />
               ) : null}
-              {expanded ? (
-                <>
-                  {day == 0 && windGusts <= wind + 10 ? (
-                    <AnimatedInfoRow
-                      animatedProps={animatedWindGustsProps as React.RefAttributes<View>}
-                      label="Wind Gusts"
-                      value={windGusts ? windGusts : wind}
-                      cutoffs={windCutoffs}
-                      metricConversion={convertWindSpeed}
-                      getWeightedAverage={weightWind}
-                      textArray={windLabels}
-                      imperialUnit=" mph"
-                      metricUnit=" kph"
-                      day={day}
-                    />
-                  ) : null}
-                  {temp < 60 ? (
-                    <AnimatedInfoRow
-                      animatedProps={animatedHumidityProps as React.RefAttributes<View>}
-                      label="Humidity"
-                      value={humidity}
-                      valuesArray={humidityLevels}
-                      cutoffs={humidityCutoffs}
-                      textArray={["dry", "comfort", "sticky"]}
-                      imperialUnit="%"
-                      metricUnit="%"
-                      day={day}
-                    />
-                  ) : null}
+              <ExpandableContent initialExpanded={expanded}>
+                {day == 0 && windGusts <= wind + 10 ? (
                   <AnimatedInfoRow
-                    animatedProps={animatedUvProps as React.RefAttributes<View>}
-                    label="UV Index"
-                    value={uv ?? 0}
-                    valuesArray={uvs as number[]}
-                    cutoffs={uvCutoffs}
-                    textArray={["safe", "caution", "danger"]}
-                    imperialUnit=""
-                    metricUnit=""
-                  />
-                  <AnimatedInfoRow
-                    animatedProps={animatedVisibilityProps as React.RefAttributes<View>}
-                    label="Visibility"
-                    value={visibility}
-                    valuesArray={visibilities}
-                    metricConversion={convertVisibility}
-                    getWeightedAverage={weightVisibility}
-                    cutoffs={visibilityCutoffs}
-                    textArray={["foggy", "misty", "clear"]}
-                    imperialUnit=" mi"
-                    metricUnit=" km"
+                    animatedProps={animatedWindGustsProps as React.RefAttributes<View>}
+                    label="Wind Gusts"
+                    value={windGusts ? windGusts : wind}
+                    cutoffs={windCutoffs}
+                    metricConversion={convertWindSpeed}
+                    getWeightedAverage={weightWind}
+                    textArray={windLabels}
+                    imperialUnit=" mph"
+                    metricUnit=" kph"
                     day={day}
                   />
-                  {day == 0 && cloudCover ? (
-                    <AnimatedInfoRow
-                      animatedProps={animatedCloudProps as React.RefAttributes<View>}
-                      label="Cloud Cover"
-                      value={cloudCover}
-                      cutoffs={cloudCoverCutoffs}
-                      textArray={["clear", "cloudy", "overcast"]}
-                      imperialUnit="%"
-                      metricUnit="%"
-                      day={day}
-                    />
-                  ) : null}
+                ) : null}
+                {temp < 60 ? (
+                  <AnimatedInfoRow
+                    animatedProps={animatedHumidityProps as React.RefAttributes<View>}
+                    label="Humidity"
+                    value={humidity}
+                    valuesArray={humidityLevels}
+                    cutoffs={humidityCutoffs}
+                    textArray={["dry", "comfort", "sticky"]}
+                    imperialUnit="%"
+                    metricUnit="%"
+                    day={day}
+                  />
+                ) : null}
+                <AnimatedInfoRow
+                  animatedProps={animatedUvProps as React.RefAttributes<View>}
+                  label="UV Index"
+                  value={uv ?? 0}
+                  valuesArray={uvs as number[]}
+                  cutoffs={uvCutoffs}
+                  textArray={["safe", "caution", "danger"]}
+                  imperialUnit=""
+                  metricUnit=""
+                />
+                <AnimatedInfoRow
+                  animatedProps={animatedVisibilityProps as React.RefAttributes<View>}
+                  label="Visibility"
+                  value={visibility}
+                  valuesArray={visibilities}
+                  metricConversion={convertVisibility}
+                  getWeightedAverage={weightVisibility}
+                  cutoffs={visibilityCutoffs}
+                  textArray={["foggy", "misty", "clear"]}
+                  imperialUnit=" mi"
+                  metricUnit=" km"
+                  day={day}
+                />
+                {day == 0 && cloudCover ? (
+                  <AnimatedInfoRow
+                    animatedProps={animatedCloudProps as React.RefAttributes<View>}
+                    label="Cloud Cover"
+                    value={cloudCover}
+                    cutoffs={cloudCoverCutoffs}
+                    textArray={["clear", "cloudy", "overcast"]}
+                    imperialUnit="%"
+                    metricUnit="%"
+                    day={day}
+                  />
+                ) : null}
 
-                  <TextRow label="Sunrise" value={dayWeather?.astro.sunrise.replace(/^0/, "")} />
-                  <TextRow label="Sunset" value={dayWeather?.astro.sunset.replace(/^0/, "")} />
-                </>
-              ) : null}
-              <Button
-                onPress={() => setExpanded(!expanded)}
-                style={{ alignSelf: "center", marginTop: 16 }}
-                mode="contained"
-              >
-                {expanded ? "Collapse" : "Expand"}
-              </Button>
+                <TextRow label="Sunrise" value={dayWeather?.astro.sunrise.replace(/^0/, "")} />
+                <TextRow label="Sunset" value={dayWeather?.astro.sunset.replace(/^0/, "")} />
+              </ExpandableContent>
             </View>
 
             {/* Hourly Forecast */}
@@ -835,6 +824,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
+
 });
 
 export default HomeScreen;

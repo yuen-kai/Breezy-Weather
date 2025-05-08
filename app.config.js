@@ -9,6 +9,31 @@ export default ({ config }) => ({
     ...config.android,
     package: getUniqueAndroidIdentifier(),
   },
+  "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon-dark.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#E8E7FF",
+          "dark": {
+            "image": "./assets/images/splash-icon-light.png",
+            "backgroundColor": "#E8E7FF"
+          }
+        }
+      ],
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "We use your location to show the weather for your current area.",
+          "locationWhenInUsePermission": "We use your location to show the weather for your current area.",
+          "locationAlwaysPermission": "We use your location to show the weather for your current area."
+        }
+      ]
+    ],
 });
 
 const IS_DEV = process.env.APP_VARIANT === "development";
