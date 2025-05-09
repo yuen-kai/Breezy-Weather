@@ -6,6 +6,8 @@ import {
   View,
   Platform,
   UIManager,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { IconButton } from "react-native-paper";
 import Animated, {
@@ -36,9 +38,8 @@ interface ExpandableContentProps {
     stiffness?: number;
     mass?: number;
   };
+  containerStyle?: StyleProp<ViewStyle>;
 }
-
-const AnimatedIconButton = Animated.createAnimatedComponent(IconButton);
 
 export const ExpandableContent: React.FC<ExpandableContentProps> = ({
   children,
@@ -49,6 +50,7 @@ export const ExpandableContent: React.FC<ExpandableContentProps> = ({
     stiffness: 100,
     mass: 1,
   },
+  containerStyle,
 }) => {
   const [expanded, setExpanded] = useState<boolean>(initialExpanded);
   const expandAnimation = useSharedValue(initialExpanded ? 1 : 0);
@@ -118,7 +120,7 @@ export const ExpandableContent: React.FC<ExpandableContentProps> = ({
   }));
 
   return (
-    <View>
+    <View style={containerStyle}>
       <Animated.View style={[styles.expandableContent, contentAnimatedStyle]}>
         <Animated.View ref={animatedContentRef} style={styles.measuredContent}>
           {children}

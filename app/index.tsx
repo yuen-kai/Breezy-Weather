@@ -55,6 +55,7 @@ import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip
 import AlertRow from "../components/AlertRow";
 import CustomSplashScreen from "../components/SplashScreen";
 import ExpandableContent from "../components/ExpandableContent";
+import * as Updates from "expo-updates";
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
@@ -77,6 +78,7 @@ const HomeScreen = () => {
     removePinnedLocation,
   } = useSettingsStore();
 
+  const [ready, setReady] = useState(false);
   const [locationName, setLocationName] = useState("Boston, Massachusetts");
   const [locationCoords, setLocationCoords] = useState<string>("");
   const [locationItems, setLocationItems] = useState<{ label: string; value: string }[]>([]);
@@ -182,25 +184,48 @@ const HomeScreen = () => {
     return ["morning", "noon", "evening"];
   }
 
+  async function onFetchUpdateAsync() {
+    try {
+      const update = await Updates.checkForUpdateAsync();
+
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+      }
+    } catch (error) {
+      console.warn(`Error fetching latest Expo update: ${error}`);
+    }
+  }
+
   //Set up
   useEffect(() => {
     if (!first) return;
-    first = false;
-    getCurrentLocation();
-    setTimeOfDay(getTimeOfDay());
+    requestAnimationFrame(() => {
+      first = false;
+      onFetchUpdateAsync();
+      getCurrentLocation();
+      setTimeOfDay(getTimeOfDay());
+      
+      const splashTimeout = setTimeout(() => {
+        setReady(true);
+      }, 800);
+      return () => clearTimeout(splashTimeout)
+    });
   }, []);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active" && new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
-        // Reload if app is opened after 30 minutes
-        reloadWeather();
-      }
-    });
+    requestAnimationFrame(() => {
+      const subscription = AppState.addEventListener("change", (nextAppState) => {
+        if (nextAppState === "active" && new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
+          // Reload if app is opened after 30 minutes
+          reloadWeather();
+        }
+      });
 
-    return () => {
-      subscription.remove();
-    };
+      return () => {
+        subscription.remove();
+      };
+    });
   }, [lastRefresh]); //because stale state issues
 
   function reloadWeather() {
@@ -320,7 +345,7 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {!weatherData ? <CustomSplashScreen /> : null}
+      {!ready && <CustomSplashScreen />}
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
         <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
@@ -528,7 +553,12 @@ const HomeScreen = () => {
               {/* Clothing Suggestion */}
               {feelsLike !== undefined && (
                 <View style={{ height: 200 }}>
-                  <ClothingSuggestion temperature={feelsLike} textVariant="titleLarge" valuesArray={feelsLikeTemps} day={day} />
+                  <ClothingSuggestion
+                    temperature={feelsLike}
+                    textVariant="titleLarge"
+                    valuesArray={feelsLikeTemps}
+                    day={day}
+                  />
                 </View>
               )}
               <AnimatedInfoRow
@@ -824,7 +854,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
-
 });
 
 export default HomeScreen;

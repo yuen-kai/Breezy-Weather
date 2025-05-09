@@ -64,8 +64,10 @@ const Layout = () => {
 
   useEffect(() => {
     if (!initial) return;
-    initial = false;
-    getSettings();
+    requestAnimationFrame(() => {
+      initial = false;
+      getSettings();
+    });
   }, []);
 
   return (

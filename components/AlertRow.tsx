@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, Title, Paragraph, IconButton } from "react-native-paper";
+import { Card, Title, Paragraph, Icon  } from "react-native-paper";
+import { TouchableOpacity } from "react-native";
 import { useAppTheme } from "@/theme";
 import WeatherApiResponse from "@/types/weather";
 
@@ -50,16 +51,13 @@ const AlertRow: React.FC<{ alert: WeatherApiResponse["alerts"]["alert"][0] }> = 
       }}
     >
       <Card.Content>
-        <Title style={{ color: getSeverityColor(), marginBottom: 4 }}>{alert.event}</Title>
-        <Paragraph style={{ fontSize: 12, color: "#757575" }}>
-          {formatDate(new Date(alert.effective))} - {formatDate(new Date(alert.expires))}
-        </Paragraph>
-        <IconButton
-          icon={expanded ? "chevron-up" : "chevron-down"}
-          size={20}
-          style={{ position: "absolute", right: 8, top: 8 }}
-          onPress={() => setExpanded(!expanded)}
-        />
+        <TouchableOpacity style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }} onPress={() => setExpanded(!expanded)}>
+          <Title style={{ color: getSeverityColor(), marginBottom: 4 }}>{alert.event}</Title>
+          <Icon
+            source={expanded ? "chevron-up" : "chevron-down"}
+            size={20}
+          />
+        </TouchableOpacity>
         {expanded && (
           <>
             <Paragraph style={{ fontSize: 12, color: "#757575" }}>{alert.headline}</Paragraph>

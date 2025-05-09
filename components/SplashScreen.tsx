@@ -4,7 +4,7 @@ import { View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 
 export default function CustomSplashScreen() {
-  SplashScreen.hideAsync();
+  SplashScreen.hide();
   
   return (
     <View style={{ 
