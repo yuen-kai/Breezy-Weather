@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, Title, Paragraph, Icon  } from "react-native-paper";
+import { Card, Title, Paragraph, Icon, Text } from "react-native-paper";
+import { View } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { useAppTheme } from "@/theme";
 import WeatherApiResponse from "@/types/weather";
@@ -50,16 +51,23 @@ const AlertRow: React.FC<{ alert: WeatherApiResponse["alerts"]["alert"][0] }> = 
         borderLeftColor: getSeverityColor(),
       }}
     >
-      <Card.Content>
-        <TouchableOpacity style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }} onPress={() => setExpanded(!expanded)}>
-          <Title style={{ color: getSeverityColor(), marginBottom: 4 }}>{alert.event}</Title>
-          <Icon
-            source={expanded ? "chevron-up" : "chevron-down"}
-            size={20}
-          />
+      <View style={{ paddingHorizontal: 16 }}>
+        <TouchableOpacity
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingVertical: 10,
+          }}
+          onPress={() => setExpanded(!expanded)}
+        >
+          <Text style={{ color: getSeverityColor(), fontSize: 18 }} variant="titleMedium">
+            {alert.event}
+          </Text>
+          <Icon source={expanded ? "chevron-up" : "chevron-down"} size={20} />
         </TouchableOpacity>
         {expanded && (
-          <>
+          <View style={{ paddingBottom: 16 }}>
             <Paragraph style={{ fontSize: 12, color: "#757575" }}>{alert.headline}</Paragraph>
             <Paragraph style={{ marginBottom: 8 }}>{alert.desc}</Paragraph>
             {alert.instruction && (
@@ -67,9 +75,9 @@ const AlertRow: React.FC<{ alert: WeatherApiResponse["alerts"]["alert"][0] }> = 
                 Instruction: {alert.instruction}
               </Paragraph>
             )}
-          </>
+          </View>
         )}
-      </Card.Content>
+      </View>
     </Card>
   );
 };
