@@ -54,12 +54,9 @@ import { ThemedDropDownPicker } from "@/components/ThemedDropDownPicker";
 import { checkIfInTimeOfDay } from "@/functions/timeOfDayFunctions";
 import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip";
 import AlertRow from "../components/AlertRow";
-import CustomSplashScreen from "../components/SplashScreen";
 import ExpandableContent from "../components/ExpandableContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SplashScreen from "expo-splash-screen";
 
-SplashScreen.preventAutoHideAsync();
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
 
@@ -74,19 +71,21 @@ const HomeScreen = () => {
     weatherData,
     lastRefresh,
     pinnedLocations,
+    locationName,
+    locationCoords,
     setTimeOfDay,
     setWeatherData,
     setLastRefresh,
     addPinnedLocation,
     removePinnedLocation,
     setPinnedLocations,
+    setLocationName,
+    setLocationCoords,
   } = useSettingsStore();
 
-  const [locationName, setLocationName] = useState("");
-  const [locationCoords, setLocationCoords] = useState<string>("");
   const [locationItems, setLocationItems] = useState<{ label: string; value: string }[]>([]);
   const [dropDownLoading, setDropdownLoading] = useState(false);
-  const [open, setOpen] = React.useState(false);
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -132,7 +131,6 @@ const HomeScreen = () => {
     } catch (err) {
       setError((err as Error).message);
     }
-    SplashScreen.hideAsync();
   }
 
   async function getNewCurrentLocation(lastLocation: Location.LocationObject | null) {
@@ -195,7 +193,9 @@ const HomeScreen = () => {
   async function setUpFirstTimeUsingDate() {
     const openedBefore = await AsyncStorage.getItem("firstTime");
     if (openedBefore) return;
-    setFirstTime(true);
+    setTimeout(() => {
+      setFirstTime(true);
+    }, 3000);
     await AsyncStorage.setItem("firstTime", JSON.stringify(new Date().getTime()));
   }
 
@@ -221,7 +221,6 @@ const HomeScreen = () => {
               fetchWeather(pinnedLocations[0].value);
             } else {
               setError("Turn on location permissions to get your current location.");
-              SplashScreen.hideAsync();
             }
           }
         });
@@ -388,8 +387,8 @@ const HomeScreen = () => {
         {/* Location picker */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <ThemedDropDownPicker
-            open={open}
-            setOpen={setOpen}
+            open={dropdownOpen}
+            setOpen={setDropdownOpen}
             onClose={() => setLocationItems(pinnedLocations)}
             listMode="SCROLLVIEW"
             value={locationName}
@@ -430,7 +429,7 @@ const HomeScreen = () => {
                   setLocationCoords("");
                   setLocationItems(pinnedLocations);
                   fetchWeather(item.value);
-                  setOpen(false);
+                  setDropdownOpen(false);
                 }}
               >
                 <Text variant="bodyLarge" style={{ fontSize: 15 }}>
@@ -620,6 +619,18 @@ const HomeScreen = () => {
                   {conditionText}
                 </Text>
               </View>
+              {weatherData.current.vis_miles < 1 && (
+                <Text
+                  style={{
+                    color: theme.colors.error,
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    marginVertical: 8,
+                  }}
+                >
+                  Warning: Low visibility ({weatherData.current.vis_miles} miles)!
+                </Text>
+              )}
               {/* </Card.Content> */}
             </Card>
             {/* Weather Details */}

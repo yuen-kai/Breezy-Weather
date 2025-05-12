@@ -18,6 +18,8 @@ interface SettingsStore {
   weatherData: WeatherApiResponse | null; // weather data should remain in the background
   lastRefresh: number;
   pinnedLocations: {label: string, value: string}[];
+  locationName: string;
+  locationCoords: string;
   setDarkMode: (mode: boolean) => void;
   setUnit: (unit: UnitType) => void;
   setCutoffs: (cutoffs: Cutoffs) => void;
@@ -29,6 +31,8 @@ interface SettingsStore {
   setPinnedLocations: (pinnedLocations: {label: string, value: string}[]) => void;
   addPinnedLocation: (location: {label: string, value: string}) => void;
   removePinnedLocation: (location: {label: string, value: string}) => void;
+  setLocationName: (locationName: string) => void;
+  setLocationCoords: (locationCoords: string) => void;
 }
 
 const useSettingsStore = create<SettingsStore>((set) => ({
@@ -41,6 +45,8 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   lastRefresh: 0,
   weatherData: null,
   pinnedLocations: [],
+  locationName: "",
+  locationCoords: "",
   setUnit: (unit) => set(() => ({ unit })),
   setDarkMode: (mode) => set(() => ({ darkMode: mode })),
   setCutoffs: (cutoffs) => set(() => ({ cutoffs })),
@@ -60,6 +66,8 @@ const useSettingsStore = create<SettingsStore>((set) => ({
     AsyncStorage.setItem('pinnedLocations', JSON.stringify(newLocations));
     return { pinnedLocations: newLocations };
   }),
+  setLocationName: (locationName) => set(() => ({ locationName })),
+  setLocationCoords: (locationCoords) => set(() => ({ locationCoords })),
 }));
 
 export default useSettingsStore;

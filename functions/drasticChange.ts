@@ -37,7 +37,6 @@ export function getDrasticChangeMessage(
   valuesArray: number[],
   value: number,
   cutoffs: number[],
-  selectedIndex: number,
   day: number,
   hasZeroValue: boolean = false,
   zeroText: string = "",
@@ -48,8 +47,11 @@ export function getDrasticChangeMessage(
   sortedTimeOfDay: TimeOfDay[]
 ) {
   let counter = 0;
-  let same = true;
   let drasticChangeMessage = "";
+
+  let minAverage = 99;
+  let maxAverage = -99;
+
   for (const time of sortedTimeOfDay) {
     const timeOfDaySetting = findTimeOfDaySetting(time, timeOfDaySettings);
     const values = valuesArray.slice(
@@ -65,15 +67,13 @@ export function getDrasticChangeMessage(
     const average = filteredValues.length > 0 ? getWeightedAverage(filteredValues) : 0;
 
     const scaledAverage = value == 0 && hasZeroValue ? -1 : convertToScale(average, cutoffs);
-    const selectedScale = value == 0 && hasZeroValue ? -1 : selectedIndex;
-    if (scaledAverage !== selectedScale) {
-      same = false;
-    }
+    if (scaledAverage < minAverage) minAverage = scaledAverage;
+    if (scaledAverage > maxAverage) maxAverage = scaledAverage;
     drasticChangeMessage += `${timeOfDaySetting.label}: ${
       value == 0 && hasZeroValue ? zeroText : textArray[scaledAverage]
     }\n`;
 
     counter += timeOfDaySetting.end - timeOfDaySetting.start;
   }
-  return same ? "" : drasticChangeMessage;
+  return maxAverage - minAverage < 2 ? "" : drasticChangeMessage;
 }

@@ -35,6 +35,7 @@ const HourlyWeatherCard: React.FC<HourlyWeatherCardProps> = ({
 				padding: 8,
 				height: 350,
 				borderWidth: checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? 1 : 0,
+				borderColor: theme.colors.primary,
 				// backgroundColor: checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? theme.colors.elevation.level2 : theme.colors.elevation.level1 ,
 			}}
 			// mode={checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay) ? "elevated" : "contained"}

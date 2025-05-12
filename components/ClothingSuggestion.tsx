@@ -46,10 +46,6 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
           valuesArray,
           temperature,
           clothingItems.map((item) => item.temperatureRange[1]),
-          convertToScale(
-            temperature,
-            clothingItems.map((item) => item.temperatureRange[1])
-          ),
           day ?? 0,
           false,
           "",

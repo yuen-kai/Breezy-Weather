@@ -1,16 +1,23 @@
+function isPrecip(hour: any): boolean {
+  return hour.condition.code > 1062 && ![1135, 1147].includes(hour.condition.code)
+}
+
+
 export function adjustHourPrecipProb(hour: any): number {
   if (!hour) return 0;
 
-  if (hour.chance_of_rain == 0 && hour.condition.code > 1062) {
+  if (hour.chance_of_rain == 0 && isPrecip(hour)) {
     // Possible/patchy conditions - increase by 10%
     if (
       hour.condition.text.toLowerCase().includes("patchy") ||
       hour.condition.text.toLowerCase().includes("possible") ||
       hour.condition.text.toLowerCase().includes("at times")
     ) {
+      console.log(hour.condition.code);
       return 10;
     }
     // Definite conditions - increase by 20%
+    console.log(hour.condition.code);
     return 20;
   }
   return hour.chance_of_rain;
@@ -18,7 +25,7 @@ export function adjustHourPrecipProb(hour: any): number {
 
 export function adjustHourPrecip(hour: any): number {
   if (!hour) return 0;
-  if (hour.condition.code < 1062 || [1135].includes(hour.condition.code)) {
+  if (!isPrecip(hour)) {
     return 0;
   }
   if (hour.precip_in === 0) {
