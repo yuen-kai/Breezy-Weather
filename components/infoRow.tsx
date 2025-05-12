@@ -53,26 +53,9 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
     const { unit, timeOfDay, timeOfDaySettings } = useSettingsStore();
 
     const selectedIndex = convertToScale(value, cutoffs);
-    // const sortedTimeOfDay = getSortedTimeOfDay(timeOfDay, timeOfDaySettings, day);
-    // const drasticChangeMessage = getDrasticChangeMessage(
-    //   timeOfDaySettings,
-    //   valuesArray,
-    //   value,
-    //   cutoffs,
-    //   selectedIndex,
-    //   day,
-    //   hasZeroValue,
-    //   zeroText,
-    //   getWeightedAverage,
-    //   label,
-    //   convertToScale,
-    //   textArray,
-    //   sortedTimeOfDay
-    // );
-
+    
     function roundWeatherValue(value: number) {
       value = unit === "metric" && metricConversion != undefined ? metricConversion(value) : value;
-      // Round to max precision 2
       if (value > 10) return Math.round(value);
       return value.toPrecision(2);
     }
@@ -104,13 +87,6 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
               {unit === "imperial" ? imperialUnit : metricUnit}
             </Text>
           </View>
-          {/* {drasticChangeMessage && (
-            <DrasticChangeTooltip
-              message={drasticChangeMessage}
-              sortedTimeOfDay={sortedTimeOfDay}
-              width={150}
-            />
-          )} */}
         </View>
 
         <View style={[styles.infoColn, { flex: 2.8 }]}>

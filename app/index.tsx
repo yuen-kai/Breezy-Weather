@@ -1,4 +1,3 @@
-// app/index.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { getWeatherData, locationAutocomplete } from "../services/weatherApi";
 import * as Location from "expo-location";
@@ -61,7 +60,6 @@ let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
 
 const HomeScreen = () => {
-  //States
   const theme = useAppTheme();
   const {
     unit,
@@ -95,7 +93,6 @@ const HomeScreen = () => {
 
   const [firstTime, setFirstTime] = useState<boolean>(false);
 
-  //Get weather
   async function fetchWeather(location?: string) {
     try {
       const data = await getWeatherData(location || locationCoords || locationName);
@@ -133,17 +130,6 @@ const HomeScreen = () => {
     }
   }
 
-  async function getNewCurrentLocation(lastLocation: Location.LocationObject | null) {
-    let currentLocation = await Location.getCurrentPositionAsync();
-    if (
-      lastLocation &&
-      (currentLocation.coords.latitude !== lastLocation.coords.latitude ||
-        currentLocation.coords.longitude !== lastLocation.coords.longitude)
-    ) {
-      setLocationDetails(currentLocation);
-    }
-  }
-  //Get Location
   async function getCurrentLocation(noError?: boolean) {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
@@ -151,12 +137,22 @@ const HomeScreen = () => {
       return false;
     }
     try {
-      // Get last known location while waiting for current position
       let lastLocation = await Location.getLastKnownPositionAsync();
       if (lastLocation) {
         setLocationDetails(lastLocation);
       }
+
       // Get current position (this may take time)
+      async function getNewCurrentLocation(lastLocation: Location.LocationObject | null) {
+        let currentLocation = await Location.getCurrentPositionAsync();
+        if (
+          lastLocation &&
+          (currentLocation.coords.latitude !== lastLocation.coords.latitude ||
+            currentLocation.coords.longitude !== lastLocation.coords.longitude)
+        ) {
+          setLocationDetails(currentLocation);
+        }
+      }
       getNewCurrentLocation(lastLocation);
       return true;
     } catch (error) {
@@ -182,7 +178,6 @@ const HomeScreen = () => {
     );
   }
 
-  //Get time of day
   function getTimeOfDay(): TimeOfDay[] {
     const h = new Date().getHours();
     if (h < 7) return ["earlyMorning", "morning", "noon", "evening"];
@@ -207,7 +202,15 @@ const HomeScreen = () => {
     return parsedJSON;
   }
 
-  //Set up
+  
+  function reloadWeather() {
+    if (locationCoords) {
+      getCurrentLocation();
+    } else {
+      fetchWeather();
+    }
+  }
+
   useEffect(() => {
     if (first) {
       setUpFirstTimeUsingDate();
@@ -245,15 +248,7 @@ const HomeScreen = () => {
     };
   }, [lastRefresh]);
 
-  function reloadWeather() {
-    if (locationCoords) {
-      getCurrentLocation();
-    } else {
-      fetchWeather();
-    }
-  }
 
-  //Set up weather arrays
   const filteredWeather = weatherData?.forecast.forecastday[day]?.hour.filter(({ time }) =>
     checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay)
   );
@@ -266,7 +261,6 @@ const HomeScreen = () => {
       ? [weatherData?.current]
       : [dayWeather?.day];
 
-  // Set up weather values
   const feelsLikeTemps = weather?.map((curr) => curr?.feelslike_f) ?? [];
   const feelsLike = !dailyWeather ? getAverage(feelsLikeTemps) : weather?.[0]?.avgtemp_f;
 
@@ -302,7 +296,6 @@ const HomeScreen = () => {
   const conditionText =
     day === 0 ? weatherData?.current.condition.text : dayWeather?.day.condition.text;
 
-  //Info rows
   const tempCutoffs = cutoffs["Temp"];
   const windCutoffs = cutoffs["Wind"];
   const precipProbCutoffs = cutoffs["Precip Prob"];
@@ -580,7 +573,6 @@ const HomeScreen = () => {
               }}
               elevation={0}
             >
-              {/* Clothing Suggestion */}
               {feelsLike !== undefined && (
                 <View style={{ height: 200 }}>
                   <ClothingSuggestion

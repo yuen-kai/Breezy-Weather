@@ -1,6 +1,5 @@
-// app/_layout.tsx
-import React, { lazy, useEffect, useState } from "react";
-import { Navigator, Slot, Stack, Tabs } from "expo-router";
+import React, { useEffect } from "react";
+import { Slot } from "expo-router";
 import { Provider as PaperProvider } from "react-native-paper";
 import useSettingsStore from "../store/store";
 import { LightTheme, DarkTheme } from "../theme";
@@ -8,18 +7,11 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
-import CustomSplashScreen from "../components/SplashScreen";
 import * as Updates from "expo-updates";
-import * as SplashScreen from "expo-splash-screen";
 
 let initial = true;
 
-// SplashScreen.preventAutoHideAsync();
-
 const Layout = () => {
-  // const [ready, setReady] = useState(false);
-  // const [loadScreen, setLoadScreen] = useState(false);
-
   const { darkMode, setUnit, setDarkMode, setCutoffs, setClothingItems } =
     useSettingsStore();
 
@@ -73,32 +65,15 @@ const Layout = () => {
       }
     }
 
-  // useEffect(() => {
-  //   if (!initial) return;
-  //   const splashTimeout = setTimeout(() => {
-  //     setReady(true);
-  //   }, 1000);
-  //   return () => clearTimeout(splashTimeout);
-  // }, []);
-
-  // Note: timeout starts after default splash screen is hidden => useEffect doesn't run immediately
-
-
   useEffect(() => {
     if (!initial) return;
-    // const loadScreenTimeout = setTimeout(() => {
-      initial = false;
-      // setLoadScreen(true);
-      onFetchUpdateAsync();
-      getSettings();
-    // }, 50);
-    // return () => clearTimeout(loadScreenTimeout);
-
+    initial = false;
+    onFetchUpdateAsync();
+    getSettings();
   }, []);
 
   return (
     <PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-      {/* <CustomSplashScreen /> */}
       <StatusBar style={darkMode ? "light" : "dark"} />
       <Slot />
     </PaperProvider>
