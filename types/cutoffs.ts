@@ -1,17 +1,17 @@
 export interface Cutoffs {
-    "Temp": number[];
-    "Wind": number[];
-    "Precip Prob": number[];
-    "Precip Inches": number[];
-    "Humidity": number[];
-    "Uv": number[];
-    "Visibility": number[];
-    "Cloud Cover": number[];
+    "Temp": [number, number, number, number, number];
+    "Wind": [number, number, number];
+    "Precip Prob": [number, number, number];
+    "Precip Inches": [number, number, number];
+    "Humidity": [number, number, number];
+    "Uv": [number, number, number];
+    "Visibility": [number, number, number];
+    "Cloud Cover": [number, number, number];
 }
 
 
 export const defaultCutoffs: Cutoffs = {
-    "Temp": [15, 30, 45, 60, 999],
+    "Temp": [40, 50, 60, 70, 999],
     "Wind": [8, 16, 999],
     "Precip Prob": [20, 50, 999],
     "Precip Inches": [0.1, 0.3, 999],

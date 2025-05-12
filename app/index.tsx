@@ -20,6 +20,7 @@ import {
   SegmentedButtons,
   IconButton,
 } from "react-native-paper";
+import { Tooltip } from "@rneui/themed";
 import { useAppTheme } from "../theme";
 import { router } from "expo-router";
 import useSettingsStore from "../store/store";
@@ -55,8 +56,10 @@ import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip
 import AlertRow from "../components/AlertRow";
 import CustomSplashScreen from "../components/SplashScreen";
 import ExpandableContent from "../components/ExpandableContent";
-import * as Updates from "expo-updates";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SplashScreen from "expo-splash-screen";
 
+SplashScreen.preventAutoHideAsync();
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
 
@@ -76,10 +79,10 @@ const HomeScreen = () => {
     setLastRefresh,
     addPinnedLocation,
     removePinnedLocation,
+    setPinnedLocations,
   } = useSettingsStore();
 
-  const [ready, setReady] = useState(false);
-  const [locationName, setLocationName] = useState("Boston, Massachusetts");
+  const [locationName, setLocationName] = useState("");
   const [locationCoords, setLocationCoords] = useState<string>("");
   const [locationItems, setLocationItems] = useState<{ label: string; value: string }[]>([]);
   const [dropDownLoading, setDropdownLoading] = useState(false);
@@ -90,6 +93,8 @@ const HomeScreen = () => {
   const [day, setDay] = useState<number>(0);
 
   const [error, setError] = useState<string | null>(null);
+
+  const [firstTime, setFirstTime] = useState<boolean>(false);
 
   //Get weather
   async function fetchWeather(location?: string) {
@@ -123,19 +128,30 @@ const HomeScreen = () => {
       );
 
       setWeatherData(data);
+      setError(null);
     } catch (err) {
       setError((err as Error).message);
     }
+    SplashScreen.hideAsync();
   }
 
+  async function getNewCurrentLocation(lastLocation: Location.LocationObject | null) {
+    let currentLocation = await Location.getCurrentPositionAsync();
+    if (
+      lastLocation &&
+      (currentLocation.coords.latitude !== lastLocation.coords.latitude ||
+        currentLocation.coords.longitude !== lastLocation.coords.longitude)
+    ) {
+      setLocationDetails(currentLocation);
+    }
+  }
   //Get Location
-  async function getCurrentLocation() {
+  async function getCurrentLocation(noError?: boolean) {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      setError("Turn on location permissions to get your current location.");
-      return;
+      if (!noError) setError("Turn on location permissions to get your current location.");
+      return false;
     }
-    const locationErrorMessage = "Failed to get your location.";
     try {
       // Get last known location while waiting for current position
       let lastLocation = await Location.getLastKnownPositionAsync();
@@ -143,20 +159,12 @@ const HomeScreen = () => {
         setLocationDetails(lastLocation);
       }
       // Get current position (this may take time)
-      let currentLocation = await Location.getCurrentPositionAsync();
-      if (
-        lastLocation &&
-        (currentLocation.coords.latitude !== lastLocation.coords.latitude ||
-          currentLocation.coords.longitude !== lastLocation.coords.longitude)
-      ) {
-        setLocationDetails(currentLocation);
-      }
-      if (error == locationErrorMessage) {
-        setError(null);
-      }
+      getNewCurrentLocation(lastLocation);
+      return true;
     } catch (error) {
       console.error("Error getting location:", error);
-      setError(locationErrorMessage);
+      setError("Failed to get your location.");
+      return false;
     }
   }
 
@@ -184,49 +192,59 @@ const HomeScreen = () => {
     return ["morning", "noon", "evening"];
   }
 
-  async function onFetchUpdateAsync() {
-    try {
-      const update = await Updates.checkForUpdateAsync();
+  async function setUpFirstTimeUsingDate() {
+    const openedBefore = await AsyncStorage.getItem("firstTime");
+    if (openedBefore) return;
+    setFirstTime(true);
+    await AsyncStorage.setItem("firstTime", JSON.stringify(new Date().getTime()));
+  }
 
-      if (update.isAvailable) {
-        await Updates.fetchUpdateAsync();
-        await Updates.reloadAsync();
-      }
-    } catch (error) {
-      console.warn(`Error fetching latest Expo update: ${error}`);
-    }
+  async function getPinnedLocations() {
+    const pinnedLocations = await AsyncStorage.getItem("pinnedLocations");
+    if (!pinnedLocations) AsyncStorage.setItem("pinnedLocations", JSON.stringify([]));
+    const parsedJSON = pinnedLocations ? JSON.parse(pinnedLocations) : [];
+    setPinnedLocations(parsedJSON);
+    return parsedJSON;
   }
 
   //Set up
   useEffect(() => {
-    if (!first) return;
-    requestAnimationFrame(() => {
-      first = false;
-      onFetchUpdateAsync();
-      getCurrentLocation();
+    if (first) {
+      setUpFirstTimeUsingDate();
       setTimeOfDay(getTimeOfDay());
-      
-      const splashTimeout = setTimeout(() => {
-        setReady(true);
-      }, 800);
-      return () => clearTimeout(splashTimeout)
-    });
-  }, []);
 
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      const subscription = AppState.addEventListener("change", (nextAppState) => {
-        if (nextAppState === "active" && new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
-          // Reload if app is opened after 30 minutes
+      getCurrentLocation(true).then((success) => {
+        getPinnedLocations().then((pinnedLocations) => {
+          if (!success && !locationName) {
+            if (pinnedLocations.length > 0) {
+              setLocationName(pinnedLocations[0].label);
+              fetchWeather(pinnedLocations[0].value);
+            } else {
+              setError("Turn on location permissions to get your current location.");
+              SplashScreen.hideAsync();
+            }
+          }
+        });
+      });
+    }
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        if (first) {
+          first = false;
+          return;
+        }
+        // Reload if app is opened after 30 minutes
+        if (new Date().getTime() - lastRefresh > 1000 * 60 * 30) {
           reloadWeather();
         }
-      });
-
-      return () => {
-        subscription.remove();
-      };
+      }
     });
-  }, [lastRefresh]); //because stale state issues
+
+    return () => {
+      subscription.remove();
+    };
+  }, [lastRefresh]);
 
   function reloadWeather() {
     if (locationCoords) {
@@ -345,10 +363,22 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {!ready && <CustomSplashScreen />}
       <Appbar.Header>
         <Appbar.Content title="Breezy" />
-        <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
+        <Tooltip
+          visible={firstTime}
+          popover={
+            <Text style={{ color: theme.colors.surface, textAlign: "center" }}>
+              Tap here to customize your weather preferences and clothing recommendations
+            </Text>
+          }
+          height={100}
+          onClose={() => setFirstTime(false)}
+          width={220}
+          backgroundColor={theme.colors.primary}
+        >
+          <Appbar.Action icon="cog" onPress={() => router.navigate("/settings")} />
+        </Tooltip>
       </Appbar.Header>
       <ScrollView
         style={{ flex: 1, padding: 16 }}
@@ -363,13 +393,14 @@ const HomeScreen = () => {
             onClose={() => setLocationItems(pinnedLocations)}
             listMode="SCROLLVIEW"
             value={locationName}
+            placeholder="Select a location"
             searchable
             items={
               locationItems.length == 0
-                ? pinnedLocations.some((item) => item.label === locationName)
+                ? pinnedLocations.some((item) => item.label === locationName) || !locationName
                   ? pinnedLocations
                   : [{ label: locationName, value: locationName }, ...pinnedLocations]
-                : locationItems.some((item) => item.label === locationName)
+                : locationItems.some((item) => item.label === locationName) || !locationName
                 ? locationItems
                 : [{ label: locationName, value: locationName }, ...locationItems]
             } // Add current location to items if it's not already there (needed for selected value box to work)

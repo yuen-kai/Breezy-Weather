@@ -19,7 +19,7 @@ export default ({ config }) => ({
           "resizeMode": "contain",
           "backgroundColor": "#E8E7FF",
           "dark": {
-            "image": "./assets/images/splash-icon-light.png",
+            "image": "./assets/images/splash-icon-dark.png",
             "backgroundColor": "#E8E7FF"
           }
         }
