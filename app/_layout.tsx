@@ -7,13 +7,13 @@ import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
-import * as Updates from "expo-updates";
+import * as SplashScreen from "expo-splash-screen";
 
+SplashScreen.preventAutoHideAsync();
 let initial = true;
 
 const Layout = () => {
-  const { darkMode, setUnit, setDarkMode, setCutoffs, setClothingItems } =
-    useSettingsStore();
+  const { darkMode, setUnit, setDarkMode, setCutoffs, setClothingItems } = useSettingsStore();
 
   async function getSettings() {
     const keys = ["unit", "darkMode", "cutoffs", "clothing"];
@@ -27,7 +27,7 @@ const Layout = () => {
       const results = await AsyncStorage.multiGet(keys);
       const missing: [string, string][] = [];
       results.forEach(([key, value]) => {
-        if (value !== null) {
+        if (value != null) {
           switch (key) {
             case "unit":
               setUnit(JSON.parse(value));
@@ -52,23 +52,9 @@ const Layout = () => {
     }
   }
 
-  async function onFetchUpdateAsync() {
-      try {
-        const update = await Updates.checkForUpdateAsync();
-  
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          await Updates.reloadAsync();
-        }
-      } catch (error) {
-        console.warn(`Error fetching latest Expo update: ${error}`);
-      }
-    }
-
   useEffect(() => {
     if (!initial) return;
     initial = false;
-    onFetchUpdateAsync();
     getSettings();
   }, []);
 

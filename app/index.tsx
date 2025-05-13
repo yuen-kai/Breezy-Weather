@@ -55,6 +55,8 @@ import { adjustHourPrecip, adjustHourPrecipProb } from "@/functions/adjustPrecip
 import AlertRow from "../components/AlertRow";
 import ExpandableContent from "../components/ExpandableContent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Updates from "expo-updates";
+import * as SplashScreen from "expo-splash-screen";
 
 let first = true;
 const AnimatedInfoRow = Animated.createAnimatedComponent(InfoRow);
@@ -89,7 +91,7 @@ const HomeScreen = () => {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [day, setDay] = useState<number>(0);
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
 
   const [firstTime, setFirstTime] = useState<boolean>(false);
 
@@ -124,7 +126,7 @@ const HomeScreen = () => {
       );
 
       setWeatherData(data);
-      setError(null);
+      setError("");
     } catch (err) {
       setError((err as Error).message);
     }
@@ -185,6 +187,25 @@ const HomeScreen = () => {
     return ["morning", "noon", "evening"];
   }
 
+
+    async function checkForUpdate() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync(); //causing problems with initial dark mode setting?
+        }else{
+          setUpFirstTimeUsingDate();
+          SplashScreen.hideAsync();
+        }
+      } catch (error) {
+        console.warn(`Error fetching latest Expo update: ${error}`);
+        setUpFirstTimeUsingDate();
+        SplashScreen.hideAsync();
+      }
+    }
+  
+
   async function setUpFirstTimeUsingDate() {
     const openedBefore = await AsyncStorage.getItem("firstTime");
     if (openedBefore) return;
@@ -206,14 +227,14 @@ const HomeScreen = () => {
   function reloadWeather() {
     if (locationCoords) {
       getCurrentLocation();
-    } else {
+    } else if (locationName) {
       fetchWeather();
     }
   }
 
   useEffect(() => {
     if (first) {
-      setUpFirstTimeUsingDate();
+      checkForUpdate();
       setTimeOfDay(getTimeOfDay());
 
       getCurrentLocation(true).then((success) => {

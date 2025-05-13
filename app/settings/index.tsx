@@ -197,6 +197,7 @@ const SettingsScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Settings" />
         <Appbar.Action icon="home" onPress={() => router.navigate("/")} />
       </Appbar.Header>
