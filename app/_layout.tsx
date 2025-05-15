@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { Slot } from "expo-router";
 import { Provider as PaperProvider } from "react-native-paper";
 import useSettingsStore from "../store/store";
 import { LightTheme, DarkTheme } from "../theme";
@@ -8,20 +7,24 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
 import * as SplashScreen from "expo-splash-screen";
+import { defaultTimeOfDaySettings } from "@/types/timeOfDay";
+import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
 
 SplashScreen.preventAutoHideAsync();
 let initial = true;
 
 const Layout = () => {
-  const { darkMode, setUnit, setDarkMode, setCutoffs, setClothingItems } = useSettingsStore();
+  const { darkMode, setUnit, setDarkMode, setCutoffs, setClothingItems, setTimeOfDaySettings } =
+    useSettingsStore();
 
   async function getSettings() {
-    const keys = ["unit", "darkMode", "cutoffs", "clothing"];
+    const keys = ["unit", "darkMode", "cutoffs", "clothing", "timeOfDaySettings"];
     const defaults = {
       unit: "imperial",
       darkMode: false,
       cutoffs: defaultCutoffs,
       clothing: defaultClothingItems,
+      timeOfDaySettings: defaultTimeOfDaySettings,
     };
     try {
       const results = await AsyncStorage.multiGet(keys);
@@ -40,6 +43,9 @@ const Layout = () => {
               break;
             case "clothing":
               setClothingItems(JSON.parse(value));
+              break;
+            case "timeOfDaySettings":
+              setTimeOfDaySettings(JSON.parse(value));
               break;
           }
         } else {
@@ -61,7 +67,13 @@ const Layout = () => {
   return (
     <PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
       <StatusBar style={darkMode ? "light" : "dark"} />
-      <Slot />
+      <Tabs>
+        <TabSlot />
+        <TabList>
+          <TabTrigger href="/" name="Home" />
+          <TabTrigger href="/settings" name="Settings" />
+        </TabList>
+      </Tabs>
     </PaperProvider>
   );
 };

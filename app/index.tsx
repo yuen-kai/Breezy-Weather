@@ -187,24 +187,22 @@ const HomeScreen = () => {
     return ["morning", "noon", "evening"];
   }
 
-
-    async function checkForUpdate() {
-      try {
-        const update = await Updates.checkForUpdateAsync();
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          await Updates.reloadAsync(); //causing problems with initial dark mode setting?
-        }else{
-          setUpFirstTimeUsingDate();
-          SplashScreen.hideAsync();
-        }
-      } catch (error) {
-        console.warn(`Error fetching latest Expo update: ${error}`);
+  async function checkForUpdate() {
+    try {
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync(); //causing problems with initial dark mode setting?
+      } else {
         setUpFirstTimeUsingDate();
         SplashScreen.hideAsync();
       }
+    } catch (error) {
+      console.warn(`Error fetching latest Expo update: ${error}`);
+      setUpFirstTimeUsingDate();
+      SplashScreen.hideAsync();
     }
-  
+  }
 
   async function setUpFirstTimeUsingDate() {
     const openedBefore = await AsyncStorage.getItem("firstTime");
@@ -223,7 +221,6 @@ const HomeScreen = () => {
     return parsedJSON;
   }
 
-  
   function reloadWeather() {
     if (locationCoords) {
       getCurrentLocation();
@@ -268,7 +265,6 @@ const HomeScreen = () => {
       subscription.remove();
     };
   }, [lastRefresh]);
-
 
   const filteredWeather = weatherData?.forecast.forecastday[day]?.hour.filter(({ time }) =>
     checkIfInTimeOfDay(new Date(time), day, timeOfDaySettings, timeOfDay)
@@ -703,7 +699,9 @@ const HomeScreen = () => {
                 imperialUnit="%"
                 metricUnit="%"
                 day={day}
-                hasZeroValue={precipProbs.every((prob) => prob === 0)}
+                hasZeroValue={weatherData?.forecast.forecastday[day]?.hour.every(
+                  (hour) => hour.precip_in === 0
+                )}
                 zeroText="none"
               />
               {precipProb > 0 || precip > 0 ? (
@@ -716,8 +714,8 @@ const HomeScreen = () => {
                   getWeightedAverage={weightPrecip}
                   cutoffs={precipCutoffs}
                   textArray={["drizzle", "shower", "downpour"]}
-                  imperialUnit=" in/hr"
-                  metricUnit=" cm/hr"
+                  imperialUnit={!dailyWeather ? " in/hr": " in"}
+                  metricUnit={!dailyWeather ? " mm/hr": " mm"}
                   day={day}
                 />
               ) : null}
