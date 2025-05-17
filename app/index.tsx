@@ -173,7 +173,7 @@ const HomeScreen = () => {
         setLocationName(locations[0].name + ", " + locations[0].region);
       }
     } catch (error) {
-      setLocationName("Error getting location name");
+      setLocationName("Current Location (error getting name)");
     }
     setLocationCoords(location.coords.latitude + "," + location.coords.longitude);
     fetchWeather(location.coords.latitude + "," + location.coords.longitude);
@@ -603,7 +603,6 @@ const HomeScreen = () => {
                     temperature={feelsLike}
                     textVariant="titleLarge"
                     valuesArray={feelsLikeTemps}
-                    day={day}
                   />
                 </View>
               )}

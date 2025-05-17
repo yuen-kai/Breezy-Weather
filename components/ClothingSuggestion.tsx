@@ -1,23 +1,17 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
-import { Text } from "react-native-paper";
-import DrasticChangeTooltip from "./DrasticChangeTooltip";
-import { Tooltip } from "@rneui/themed";
+import { Text, Icon, Tooltip } from "react-native-paper";
 import { useAppTheme } from "../theme";
 import { ClothingItem } from "@/types/clothing";
 import useSettingsStore from "@/store/store";
 import { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
-import { getSortedTimeOfDay, getDrasticChangeMessage } from "@/functions/drasticChange";
-import { convertToScale } from "@/components/InfoRow";
-import { getAverage } from "@/functions/average";
 
 interface ClothingSuggestionProps {
-  temperature: number; // in correct unit (e.g., already converted to F if user chose imperial)
+  temperature: number;
   valuesArray?: number[];
   textWidth?: number;
   textVariant?: VariantProp<never>;
-  day?: number;
 }
 
 const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
@@ -25,36 +19,19 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
   valuesArray = [],
   textWidth,
   textVariant = "bodyLarge",
-  day,
 }) => {
   const theme = useAppTheme();
-  const { clothingItems, timeOfDay, timeOfDaySettings } = useSettingsStore();
+  const { clothingItems } = useSettingsStore();
 
   // Find the first clothing item that matches the temperature range given a sorted list
   const suggestion: ClothingItem =
     clothingItems.find((item) => temperature < item.temperatureRange[1]) ?? clothingItems[-1];
 
-  if (valuesArray.length > 0 && day === undefined) {
-    console.warn("day is undefined");
-  }
-  const sortedTimeOfDay = getSortedTimeOfDay(timeOfDay, timeOfDaySettings, day ?? 0);
-  const drasticChangeMessage =
-    valuesArray.length > 0
-      ? getDrasticChangeMessage(
-          timeOfDaySettings,
-          valuesArray,
-          temperature,
-          clothingItems.map((item) => item.temperatureRange[1]),
-          day ?? 0,
-          false,
-          "",
-          getAverage,
-          "",
-          convertToScale,
-          clothingItems.map((item) => item.name),
-          sortedTimeOfDay
-        )
-      : "";
+  // No values array => hourly => no drastic change
+  const minTemp = Math.min(...valuesArray) ?? temperature;
+  const maxTemp = Math.max(...valuesArray) ?? temperature;
+
+  const hasDrasticChange = maxTemp - minTemp > 15;
 
   return (
     <View style={styles.container}>
@@ -67,11 +44,10 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
             >
               Suggested: {suggestion.name}
             </Text>
-            {drasticChangeMessage && (
-              <DrasticChangeTooltip 
-                message={drasticChangeMessage}
-                sortedTimeOfDay={sortedTimeOfDay}
-              />
+            {hasDrasticChange && (
+              <Tooltip title="Weather changes drastically" enterTouchDelay={0}>
+                <Icon source="swap-vertical-bold" color={theme.colors.error} size={25} />
+              </Tooltip>
             )}
           </View>
 
