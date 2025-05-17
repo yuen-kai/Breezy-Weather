@@ -165,10 +165,16 @@ const HomeScreen = () => {
   }
 
   async function setLocationDetails(location: Location.LocationObject) {
-    let locations = await locationAutocomplete(
-      location.coords.latitude + "," + location.coords.longitude
-    );
-    setLocationName(locations[0].name + ", " + locations[0].region);
+    try {
+      const locations = await locationAutocomplete(
+        location.coords.latitude + "," + location.coords.longitude
+      );
+      if (locations && locations.length > 0) {
+        setLocationName(locations[0].name + ", " + locations[0].region);
+      }
+    } catch (error) {
+      setLocationName("Error getting location name");
+    }
     setLocationCoords(location.coords.latitude + "," + location.coords.longitude);
     fetchWeather(location.coords.latitude + "," + location.coords.longitude);
   }
@@ -506,6 +512,7 @@ const HomeScreen = () => {
                 })
                 .catch((err) => {
                   console.error(err);
+                  setLocationItems([{ label: text, value: text }]);
                 })
                 .finally(() => {
                   // Hide the loading animation
@@ -515,7 +522,7 @@ const HomeScreen = () => {
             containerStyle={{ flex: 1 }}
             searchPlaceholder="Search location"
           />
-          <IconButton icon="crosshairs-gps" onPress={getCurrentLocation} />
+          <IconButton icon="crosshairs-gps" onPress={() => getCurrentLocation()} />
         </View>
         {weatherData && weatherData.alerts.alert.length > 0 && (
           <View style={{ marginTop: 16 }}>
@@ -700,7 +707,7 @@ const HomeScreen = () => {
                 metricUnit="%"
                 day={day}
                 hasZeroValue={weatherData?.forecast.forecastday[day]?.hour.every(
-                  (hour) => hour.precip_in === 0
+                  (hour) => adjustHourPrecipProb(hour) === 0
                 )}
                 zeroText="none"
               />
@@ -714,8 +721,8 @@ const HomeScreen = () => {
                   getWeightedAverage={weightPrecip}
                   cutoffs={precipCutoffs}
                   textArray={["drizzle", "shower", "downpour"]}
-                  imperialUnit={!dailyWeather ? " in/hr": " in"}
-                  metricUnit={!dailyWeather ? " mm/hr": " mm"}
+                  imperialUnit={!dailyWeather ? " in/hr" : " in"}
+                  metricUnit={!dailyWeather ? " mm/hr" : " mm"}
                   day={day}
                 />
               ) : null}

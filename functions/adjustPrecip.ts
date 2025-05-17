@@ -13,11 +13,9 @@ export function adjustHourPrecipProb(hour: any): number {
       hour.condition.text.toLowerCase().includes("possible") ||
       hour.condition.text.toLowerCase().includes("at times")
     ) {
-      console.log(hour.condition.code);
       return 10;
     }
     // Definite conditions - increase by 20%
-    console.log(hour.condition.code);
     return 20;
   }
   return hour.chance_of_rain;

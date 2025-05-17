@@ -14,14 +14,10 @@ export default ({ config }) => ({
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon-dark.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#E8E7FF",
-          "dark": {
-            "image": "./assets/images/splash-icon-dark.png",
-            "backgroundColor": "#E8E7FF"
-          }
         }
       ],
       "expo-font",
