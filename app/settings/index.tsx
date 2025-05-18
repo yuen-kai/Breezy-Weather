@@ -257,7 +257,7 @@ const SettingsScreen = () => {
         </Card>
 
         <Card style={styles.card}>
-          <Text variant="bodyLarge" style={styles.sectionTitle}>Default Time Of Day Selection</Text>
+          <Text variant="bodyLarge" style={styles.sectionTitle}>Default Time of Day Selection</Text>
           <TimeOfDaySelector
             value={defaultTimeOfDay}
             onValueChange={(value) => {
@@ -268,7 +268,7 @@ const SettingsScreen = () => {
         </Card>
 
         <Card style={styles.card}>
-          <Text variant="bodyLarge" style={styles.sectionTitle}>Upper Limit Cutoffs (Imperial)</Text>
+          <Text variant="bodyLarge" style={styles.sectionTitle}>Visual Scale Upper Limit Cutoffs (Imperial)</Text>
           {Object.entries(cutoffs).map(([key, values]: [string, number[]]) => (
             <View key={key} style={styles.cutoffsRow}>
               <Text variant="bodyMedium" style={{ flex: 1 }}>
