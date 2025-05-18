@@ -1,17 +1,16 @@
 # Breezy – Weather, Simplified.
 
-Breezy is a weather app that makes checking the weather effortless with clear, easy-to-understand forecasts. No guesswork, no clutter—just the essential details at a glance.
+Other weather apps show you the numbers. Breezy tells you what they mean with simple forecasts and outfit suggestions that help you get ready, fast.
 
 ## Why Choose Breezy?
 
-- **Quick & Intuitive** — Built from the ground up with amazing features
+- **Quick & Intuitive**
    - **Outfit suggestions** — Always be prepared
-   - **Scannable summary words** make it easy to understand the weather quickly — no need to interpret numbers
+   - **Clear Words, Not Just Numbers** – No decoding needed
    - **Visual scale** to easily visualize and track weather changes
-   - **Intuitive daily weather** and time-of-day navigator
+   - **Quick Navigation** – Check weather by time of day with a tap
 - **Customizable** – Add your own outfits and customize the visual scale cutoffs.
-- **Powerful, Yet Simple** – Tons of weather details, without the complexity.
-- **Fast & Clutter-Free** – No ads, no unnecessary charts—just the essentials.
+- **Focused Design** – No ads, no unnecessary charts—just the essentials.
 - **Completely Free**
 
 Mobile app coming out soon
