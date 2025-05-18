@@ -62,18 +62,7 @@ const Layout = () => {
 
     function handleSetDefaultTimeOfDay(value: TimeOfDay[]) {
       setDefaultTimeOfDay(value);
-      setTimeOfDay(getTimeOfDay(value));
-    }
-
-    function getTimeOfDay(value: TimeOfDay[]): TimeOfDay[] {
-      // If defaultTimeOfDay is set, use it instead of calculating based on current hour
-      if (value) return value;
-
-      // Fallback to time-based calculation if defaultTimeOfDay is not set
-      const h = new Date().getHours();
-      if (h < 7) return ["earlyMorning", "morning", "noon", "evening"];
-      if (h >= 20 && h < 24) return ["morning", "noon", "evening", "night"];
-      return ["morning", "noon", "evening"];
+      setTimeOfDay(value);
     }
 
     try {
