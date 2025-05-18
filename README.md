@@ -4,11 +4,10 @@ Other weather apps show you the numbers. Breezy tells you what they mean with si
 
 ## Why Choose Breezy?
 
-- **Quick & Intuitive**
-   - **Outfit suggestions** — Always be prepared
-   - **Clear Words, Not Just Numbers** – No decoding needed
-   - **Visual scale** to easily visualize and track weather changes
-   - **Quick Navigation** – Check weather by time of day with a tap
+- **Outfit suggestions** — Always be prepared
+- **Clear Words, Not Just Numbers** – No decoding needed
+- **Visual weather scale** – easily visualize and track weather changes
+- **Quick Navigation** – Check weather by time of day with a tap
 - **Customizable** – Add your own outfits and customize the visual scale cutoffs.
 - **Focused Design** – No ads, no unnecessary charts—just the essentials.
 - **Completely Free**
