@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { defaultCutoffs } from "../types/cutoffs";
 import { defaultClothingItems } from "@/types/clothing";
 import * as SplashScreen from "expo-splash-screen";
-import { defaultTimeOfDaySettings, defaultTimeOfDay, TimeOfDay } from "@/types/timeOfDay";
+import { defaultTimeOfDaySettings, defaultTimeOfDay } from "@/types/timeOfDay";
 import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
 
 SplashScreen.preventAutoHideAsync();
@@ -57,13 +57,8 @@ const Layout = () => {
       cutoffs: setCutoffs,
       clothing: setClothingItems,
       timeOfDaySettings: setTimeOfDaySettings,
-      defaultTimeOfDay: handleSetDefaultTimeOfDay,
+      defaultTimeOfDay: setDefaultTimeOfDay,
     };
-
-    function handleSetDefaultTimeOfDay(value: TimeOfDay[]) {
-      setDefaultTimeOfDay(value);
-      setTimeOfDay(value);
-    }
 
     try {
       const results = await AsyncStorage.multiGet(keys);
@@ -75,6 +70,10 @@ const Layout = () => {
           setters[settingKey](JSON.parse(value));
         } else {
           missing.push([settingKey, JSON.stringify(defaults[settingKey])]);
+        }
+
+        if (settingKey === "defaultTimeOfDay") {
+          setTimeOfDay(value != null ? JSON.parse(value) : defaultTimeOfDay);
         }
       });
       if (missing.length) await AsyncStorage.multiSet(missing);
