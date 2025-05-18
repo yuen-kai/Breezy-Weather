@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { ClothingItem, defaultClothingItems } from '@/types/clothing';
 import { Cutoffs, defaultCutoffs } from '@/types/cutoffs';
 import WeatherApiResponse from '@/types/weather';
-import { TimeOfDay, TimeOfDaySetting, defaultTimeOfDaySettings } from '@/types/timeOfDay';
+import { TimeOfDay, TimeOfDaySetting, defaultTimeOfDaySettings, defaultTimeOfDay } from '@/types/timeOfDay';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type UnitType = 'imperial' | 'metric';
@@ -15,6 +15,7 @@ interface SettingsStore {
   clothingItems: ClothingItem[];
   timeOfDay: TimeOfDay[];
   timeOfDaySettings: TimeOfDaySetting[];
+  defaultTimeOfDay: TimeOfDay[];
   weatherData: WeatherApiResponse | null; // weather data should remain in the background
   lastRefresh: number;
   pinnedLocations: {label: string, value: string}[];
@@ -26,6 +27,7 @@ interface SettingsStore {
   setClothingItems: (clothingItems: ClothingItem[]) => void;
   setTimeOfDay: (timeOfDay: TimeOfDay[]) => void;
   setTimeOfDaySettings: (timeOfDaySettings: TimeOfDaySetting[]) => void;
+  setDefaultTimeOfDay: (defaultTimeOfDay: TimeOfDay[]) => void;
   setWeatherData: (data: WeatherApiResponse) => void;
   setLastRefresh: (lastRefresh: number) => void;
   setPinnedLocations: (pinnedLocations: {label: string, value: string}[]) => void;
@@ -42,6 +44,7 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   clothingItems: defaultClothingItems,
   timeOfDay: [],
   timeOfDaySettings: defaultTimeOfDaySettings,
+  defaultTimeOfDay: defaultTimeOfDay,
   lastRefresh: 0,
   weatherData: null,
   pinnedLocations: [],
@@ -53,6 +56,7 @@ const useSettingsStore = create<SettingsStore>((set) => ({
   setClothingItems: (clothingItems) => set(() => ({ clothingItems })),
   setTimeOfDay: (timeOfDay) => set(() => ({ timeOfDay })),
   setTimeOfDaySettings: (timeOfDaySettings) => set(() => ({ timeOfDaySettings })),
+  setDefaultTimeOfDay: (defaultTimeOfDay) => set(() => ({ defaultTimeOfDay })),
   setWeatherData: (data) => set(() => ({ weatherData: data })),
   setLastRefresh: (lastRefresh) => set(() => ({ lastRefresh })),
   setPinnedLocations: (pinnedLocations) => set(() => ({ pinnedLocations })),

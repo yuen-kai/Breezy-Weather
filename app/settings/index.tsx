@@ -23,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { TimeOfDaySetting } from '@/types/timeOfDay';
 import * as Linking from 'expo-linking';
+import TimeOfDaySelector from '@/components/TimeOfDaySelector';
 
 
 const SettingsScreen = () => {
@@ -34,11 +35,13 @@ const SettingsScreen = () => {
     darkMode,
     cutoffs,
     clothingItems,
+    defaultTimeOfDay,
     setTimeOfDaySettings,
     setUnit,
     setDarkMode,
     setCutoffs,
-    setClothingItems
+    setClothingItems,
+    setDefaultTimeOfDay
   } = useSettingsStore();
 
   const [newClothingName, setNewClothingName] = useState('');
@@ -51,13 +54,14 @@ const SettingsScreen = () => {
   const [image, setImage] = useState<string>('');
   const [tint, setTint] = useState(false);
 
-  async function saveSettings(settingType: 'unit' | 'darkMode' | 'cutoffs' | 'timeOfDaySettings' | 'clothing', value?: any) {
+  async function saveSettings(settingType: 'unit' | 'darkMode' | 'cutoffs' | 'timeOfDaySettings' | 'defaultTimeOfDay' | 'clothing', value?: any) {
     try {
       const stateMap = {
         'unit': unit,
         'darkMode': darkMode,
         'cutoffs': cutoffs,
         'timeOfDaySettings': timeOfDaySettings,
+        'defaultTimeOfDay': defaultTimeOfDay,
         'clothing': clothingItems
       };
 
@@ -250,6 +254,17 @@ const SettingsScreen = () => {
               </View>
             </View>
           ))}
+        </Card>
+
+        <Card style={styles.card}>
+          <Text variant="bodyLarge" style={styles.sectionTitle}>Default Time Of Day Selection</Text>
+          <TimeOfDaySelector
+            value={defaultTimeOfDay}
+            onValueChange={(value) => {
+              setDefaultTimeOfDay(value);
+              saveSettings('defaultTimeOfDay', value);
+            }}
+          />
         </Card>
 
         <Card style={styles.card}>

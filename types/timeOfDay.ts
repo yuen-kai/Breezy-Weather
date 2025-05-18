@@ -14,3 +14,5 @@ export const defaultTimeOfDaySettings: TimeOfDaySetting[] = [
     { label: 'evening', displayName: "Evening", start: 15, end: 20 },
     { label: 'night', displayName: "Night", start: 20, end: 24 },
 ];
+
+export const defaultTimeOfDay: TimeOfDay[] = ['morning', 'noon', 'evening'];

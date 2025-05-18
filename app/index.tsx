@@ -10,15 +10,7 @@ import {
   AppState,
   TouchableOpacity,
 } from "react-native";
-import {
-  Text,
-  Button,
-  Card,
-  Divider,
-  Appbar,
-  SegmentedButtons,
-  IconButton,
-} from "react-native-paper";
+import { Text, Button, Card, Divider, Appbar, IconButton } from "react-native-paper";
 import { Tooltip } from "@rneui/themed";
 import { useAppTheme } from "../theme";
 import { router } from "expo-router";
@@ -26,6 +18,7 @@ import useSettingsStore from "../store/store";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingSuggestion from "../components/ClothingSuggestion";
 import { TimeOfDay } from "@/types/timeOfDay";
+import TimeOfDaySelector from "../components/TimeOfDaySelector";
 import { InfoRow, convertToScale } from "@/components/InfoRow";
 import { TextRow } from "@/components/TextRow";
 import Animated, {
@@ -68,6 +61,7 @@ const HomeScreen = () => {
     cutoffs,
     timeOfDay,
     timeOfDaySettings,
+    defaultTimeOfDay,
     weatherData,
     lastRefresh,
     pinnedLocations,
@@ -186,13 +180,6 @@ const HomeScreen = () => {
     );
   }
 
-  function getTimeOfDay(): TimeOfDay[] {
-    const h = new Date().getHours();
-    if (h < 7) return ["earlyMorning", "morning", "noon", "evening"];
-    if (h >= 20 && h < 24) return ["morning", "noon", "evening", "night"];
-    return ["morning", "noon", "evening"];
-  }
-
   async function checkForUpdate() {
     try {
       const update = await Updates.checkForUpdateAsync();
@@ -238,7 +225,6 @@ const HomeScreen = () => {
   useEffect(() => {
     if (first) {
       checkForUpdate();
-      setTimeOfDay(getTimeOfDay());
 
       getCurrentLocation(true).then((success) => {
         getPinnedLocations().then((pinnedLocations) => {
@@ -564,23 +550,11 @@ const HomeScreen = () => {
         </View>
 
         {/* Time of Day Selector */}
-        <SegmentedButtons
+        <TimeOfDaySelector
           style={{ marginTop: 16, marginBottom: !error ? 32 : 16 }}
           value={timeOfDay}
-          onValueChange={(value) => {
-            setTimeOfDay(value as TimeOfDay[]);
-          }}
-          buttons={timeOfDaySettings.map((setting) => ({
-            value: setting.label,
-            label: setting.displayName,
-            disabled: day === 0 && new Date().getHours() >= setting.end,
-          }))}
-          multiSelect
-          theme={{
-            fonts: {
-              labelLarge: { fontSize: 12 },
-            },
-          }}
+          onValueChange={setTimeOfDay}
+          disabledFunction={(setting) => day === 0 && new Date().getHours() >= setting.end}
         />
         {error && (
           <Text style={{ color: "red", textAlign: "center", marginBottom: 16 }}>{error}</Text>
