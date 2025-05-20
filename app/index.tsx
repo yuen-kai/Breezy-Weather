@@ -364,7 +364,13 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Appbar.Header>
+      <Appbar.Header style={{ 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3
+      }}>
         <Appbar.Content title="Breezy" />
         <Tooltip
           visible={firstTime}

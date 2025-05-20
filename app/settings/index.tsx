@@ -200,7 +200,13 @@ const SettingsScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header>
+      <Appbar.Header style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3
+      }}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Settings" />
         <Appbar.Action icon="home" onPress={() => router.navigate("/")} />
