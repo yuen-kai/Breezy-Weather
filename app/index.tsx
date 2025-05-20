@@ -16,7 +16,8 @@ import { useAppTheme } from "../theme";
 import { router } from "expo-router";
 import useSettingsStore from "../store/store";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
-import ClothingSuggestion from "../components/ClothingSuggestion";
+import ClothingCarousel from "../components/ClothingCarousel";
+import ClothingHourly from "../components/ClothingHourly";
 import { TimeOfDay } from "@/types/timeOfDay";
 import TimeOfDaySelector from "../components/TimeOfDaySelector";
 import { InfoRow, convertToScale } from "@/components/InfoRow";
@@ -584,13 +585,10 @@ const HomeScreen = () => {
               elevation={0}
             >
               {feelsLike !== undefined && (
-                <View style={{ height: 200 }}>
-                  <ClothingSuggestion
-                    temperature={feelsLike}
-                    textVariant="titleLarge"
-                    valuesArray={feelsLikeTemps}
-                  />
-                </View>
+                <ClothingCarousel
+                  temperature={feelsLike}
+                  valuesArray={feelsLikeTemps}
+                />
               )}
               <AnimatedInfoRow
                 label="Feels like"

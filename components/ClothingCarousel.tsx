@@ -1,67 +1,91 @@
 import React, { useEffect } from "react";
-import { Dimensions, View, StyleProp, ImageStyle } from "react-native";
+import { View } from "react-native";
 import { Image } from "expo-image";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { ClothingItem } from "@/types/clothing";
-import { Text } from "react-native-paper";
-
-const { width } = Dimensions.get("window");
+import { Text, Icon, Tooltip } from "react-native-paper";
+import { StyleSheet } from "react-native";
+import useSettingsStore from "@/store/store";
+import { useAppTheme } from "../theme";
 
 interface ClothingCarouselProps {
-  clothingItems: ClothingItem[];
-  currentSuggestion: ClothingItem;
-  imageStyle?: StyleProp<ImageStyle>;
+  temperature: number;
+  valuesArray: number[];
 }
 
-const ClothingCarousel: React.FC<ClothingCarouselProps> = ({
-  clothingItems,
-  currentSuggestion,
-  imageStyle,
-}) => {
+const ClothingCarousel: React.FC<ClothingCarouselProps> = ({ temperature, valuesArray }) => {
+  const theme = useAppTheme();
+  const { clothingItems } = useSettingsStore();
+
+  const suggestion: ClothingItem =
+    clothingItems.find((item) => temperature < item.temperatureRange[1]) ?? clothingItems[-1];
+
+  const minTemp = Math.min(...valuesArray) ?? temperature;
+  const maxTemp = Math.max(...valuesArray) ?? temperature;
+
+  const hasDrasticChange = maxTemp - minTemp > 15;
   const ref = React.useRef<ICarouselInstance>(null);
 
-  // Find the index of the current suggestion in the clothing items array
-  const currentIndex = clothingItems.findIndex((item) => item.name === currentSuggestion.name);
+  const currentIndex = clothingItems.findIndex((item) => item.name === suggestion?.name);
 
-  // When the current suggestion changes, animate to that index
   useEffect(() => {
     if (ref.current && currentIndex !== -1) {
       ref.current.scrollTo({ index: currentIndex, animated: true });
     }
-  }, [currentSuggestion, currentIndex]);
+  }, [suggestion, currentIndex]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Carousel
-        ref={ref}
-        loop={false}
-        enabled={false} // Disable user control
-        data={clothingItems}
-        renderItem={({ item }) => {
-          return (
-            <>
-            <Text variant="titleLarge" style={{ textAlign: "center", padding: 4 }}>
-                Suggested: {currentSuggestion.name}
-              </Text>
-              <Image source={item.image} style={imageStyle} contentFit="contain" /> 
-            </>
-          );
-        }}
-        width={width * 0.7}
-        mode="parallax"
-        modeConfig={{
-          parallaxScrollingScale: 0.9,
-          parallaxScrollingOffset: 50,
-        }}
-      />
+    <View style={{ alignItems: "center", height: 200 }}>
+      {suggestion ? (
+        <>
+          <Carousel
+            ref={ref}
+            loop={false}
+            enabled={false} // Disable user control
+            data={clothingItems}
+            renderItem={({ item }) => {
+              return (
+                <View style={{ alignItems: "center", flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text variant="titleLarge" style={{ textAlign: "center", padding: 4 }}>
+                      Suggested: {suggestion.name}
+                    </Text>
+                    {hasDrasticChange && (
+                      <Tooltip title="Weather changes drastically" enterTouchDelay={0}>
+                        <Icon source="swap-vertical-bold" color={theme.colors.error} size={25} />
+                      </Tooltip>
+                    )}
+                  </View>
+
+                  <Image
+                    source={item.image}
+                    style={[styles.icon, item.tint && { tintColor: theme.colors.onBackground }]}
+                    contentFit="contain"
+                  />
+                </View>
+              );
+            }}
+            width={400}
+            mode="parallax"
+            modeConfig={{
+              parallaxScrollingScale: 0.9,
+              parallaxScrollingOffset: 50,
+            }}
+          />
+        </>
+      ) : (
+        <Text variant="bodyLarge">No suggestion found</Text>
+      )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  icon: {
+    flex: 1,
+    marginTop: 8,
+    width: "100%",
+  }
+});
 
 export default ClothingCarousel;
