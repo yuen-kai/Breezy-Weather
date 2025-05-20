@@ -3,6 +3,7 @@ import { Dimensions, View, StyleProp, ImageStyle } from "react-native";
 import { Image } from "expo-image";
 import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import { ClothingItem } from "@/types/clothing";
+import { Text } from "react-native-paper";
 
 const { width } = Dimensions.get("window");
 
@@ -43,7 +44,14 @@ const ClothingCarousel: React.FC<ClothingCarouselProps> = ({
         enabled={false} // Disable user control
         data={clothingItems}
         renderItem={({ item }) => {
-          return <Image source={item.image} style={imageStyle} contentFit="contain" />;
+          return (
+            <>
+            <Text variant="titleLarge" style={{ textAlign: "center", padding: 4 }}>
+                Suggested: {currentSuggestion.name}
+              </Text>
+              <Image source={item.image} style={imageStyle} contentFit="contain" /> 
+            </>
+          );
         }}
         width={width * 0.7}
         mode="parallax"

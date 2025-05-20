@@ -40,22 +40,6 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
       {suggestion ? (
         <>
           <View style={{ flexDirection: "row", alignItems: "center", width: textWidth }}>
-            {valuesArray.length > 0 ? (
-              <>
-                <Text variant={textVariant} style={{ textAlign: "center", padding: 4 }}>
-                  Suggested:
-                </Text>
-                <TextCarousel
-                  clothingItems={clothingItems}
-                  currentSuggestion={suggestion}
-                  textVariant={textVariant}
-                />
-              </>
-            ) : (
-              <Text variant={textVariant} style={{ textAlign: "center", padding: 4 }}>
-                Suggested: {suggestion.name}
-              </Text>
-            )}
             {hasDrasticChange && (
               <Tooltip title="Weather changes drastically" enterTouchDelay={0}>
                 <Icon source="swap-vertical-bold" color={theme.colors.error} size={25} />
