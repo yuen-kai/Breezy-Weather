@@ -334,6 +334,10 @@ const HomeScreen = () => {
     return animatedStyle;
   }
 
+  const precipProbHasZeroValue = weatherData?.forecast.forecastday[day]?.hour.every(
+    (hour) => adjustHourPrecipProb(hour) === 0
+  );
+
   let animatedFeelsLikeProps = useScaledValue(feelsLike, tempCutoffs);
   let animatedTempProps = useScaledValue(temp, tempCutoffs);
   let animatedWindProps = useScaledValue(wind, windCutoffs);
@@ -341,7 +345,7 @@ const HomeScreen = () => {
   let animatedPrecipProbProps = useScaledValue(
     precipProb,
     precipProbCutoffs,
-    !dayWeather?.day.daily_will_it_rain && !dayWeather?.day.daily_will_it_snow
+    precipProbHasZeroValue
   );
   let animatedPrecipProps = useScaledValue(precip, precipCutoffs);
   let animatedHumidityProps = useScaledValue(humidity, humidityCutoffs);
@@ -364,13 +368,15 @@ const HomeScreen = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Appbar.Header style={{ 
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3
-      }}>
+      <Appbar.Header
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
+      >
         <Appbar.Content title="Breezy" />
         <Tooltip
           visible={firstTime}
@@ -589,7 +595,6 @@ const HomeScreen = () => {
               <AnimatedInfoRow
                 label="Feels like"
                 value={feelsLike}
-                valuesArray={feelsLikeTemps}
                 metricConversion={convertTemperature}
                 cutoffs={tempCutoffs}
                 textArray={tempLabels}
@@ -639,26 +644,21 @@ const HomeScreen = () => {
                 animatedProps={animatedTempProps as React.RefAttributes<View>}
                 label="Temp"
                 value={temp}
-                valuesArray={temps}
                 metricConversion={convertTemperature}
                 cutoffs={tempCutoffs}
                 textArray={tempLabels}
                 imperialUnit=" °F"
                 metricUnit=" °C"
-                day={day}
               />
               <AnimatedInfoRow
                 animatedProps={animatedWindProps as React.RefAttributes<View>}
                 label="Wind"
                 value={wind}
-                valuesArray={windSpeeds}
                 metricConversion={convertWindSpeed}
-                getWeightedAverage={weightWind}
                 cutoffs={windCutoffs}
                 textArray={windLabels}
                 imperialUnit=" mph"
                 metricUnit=" kph"
-                day={day}
               />
               {day == 0 && windGusts > wind + 10 ? (
                 <AnimatedInfoRow
@@ -666,28 +666,21 @@ const HomeScreen = () => {
                   label="Wind Gusts"
                   value={windGusts}
                   metricConversion={convertWindSpeed}
-                  getWeightedAverage={weightWind}
                   cutoffs={windCutoffs}
                   textArray={windLabels}
                   imperialUnit=" mph"
                   metricUnit=" kph"
-                  day={day}
                 />
               ) : null}
               <AnimatedInfoRow
                 animatedProps={animatedPrecipProbProps as React.RefAttributes<View>}
                 label="Precip"
                 value={precipProb}
-                valuesArray={precipProbs}
-                getWeightedAverage={weightPrecipProb}
                 cutoffs={precipProbCutoffs}
                 textArray={["unlikely", "possible", "likely"]}
                 imperialUnit="%"
                 metricUnit="%"
-                day={day}
-                hasZeroValue={weatherData?.forecast.forecastday[day]?.hour.every(
-                  (hour) => adjustHourPrecipProb(hour) === 0
-                )}
+                hasZeroValue={precipProbHasZeroValue}
                 zeroText="none"
               />
               {precipProb > 0 || precip > 0 ? (
@@ -695,14 +688,11 @@ const HomeScreen = () => {
                   animatedProps={animatedPrecipProps as React.RefAttributes<View>}
                   label={temp < 32 ? "Snow" : "Rain"}
                   value={precip}
-                  valuesArray={precipInches}
                   metricConversion={convertPrecip}
-                  getWeightedAverage={weightPrecip}
                   cutoffs={precipCutoffs}
                   textArray={["drizzle", "shower", "downpour"]}
                   imperialUnit={!dailyWeather ? " in/hr" : " in"}
                   metricUnit={!dailyWeather ? " mm/hr" : " mm"}
-                  day={day}
                 />
               ) : null}
               {temp >= 60 ? (
@@ -710,12 +700,10 @@ const HomeScreen = () => {
                   animatedProps={animatedHumidityProps as React.RefAttributes<View>}
                   label="Humidity"
                   value={humidity}
-                  valuesArray={humidityLevels}
                   cutoffs={humidityCutoffs}
                   textArray={["dry", "comfort", "sticky"]}
                   imperialUnit="%"
                   metricUnit="%"
-                  day={day}
                 />
               ) : null}
               <ExpandableContent initialExpanded={expanded}>
@@ -726,11 +714,9 @@ const HomeScreen = () => {
                     value={windGusts ? windGusts : wind}
                     cutoffs={windCutoffs}
                     metricConversion={convertWindSpeed}
-                    getWeightedAverage={weightWind}
                     textArray={windLabels}
                     imperialUnit=" mph"
                     metricUnit=" kph"
-                    day={day}
                   />
                 ) : null}
                 {temp < 60 ? (
@@ -738,19 +724,16 @@ const HomeScreen = () => {
                     animatedProps={animatedHumidityProps as React.RefAttributes<View>}
                     label="Humidity"
                     value={humidity}
-                    valuesArray={humidityLevels}
                     cutoffs={humidityCutoffs}
                     textArray={["dry", "comfort", "sticky"]}
                     imperialUnit="%"
                     metricUnit="%"
-                    day={day}
                   />
                 ) : null}
                 <AnimatedInfoRow
                   animatedProps={animatedUvProps as React.RefAttributes<View>}
                   label="UV Index"
                   value={uv ?? 0}
-                  valuesArray={uvs as number[]}
                   cutoffs={uvCutoffs}
                   textArray={["safe", "caution", "danger"]}
                   imperialUnit=""
@@ -760,16 +743,13 @@ const HomeScreen = () => {
                   animatedProps={animatedVisibilityProps as React.RefAttributes<View>}
                   label="Visibility"
                   value={visibility}
-                  valuesArray={visibilities}
                   metricConversion={convertVisibility}
-                  getWeightedAverage={weightVisibility}
                   cutoffs={visibilityCutoffs}
                   textArray={["foggy", "misty", "clear"]}
                   imperialUnit=" mi"
                   metricUnit=" km"
-                  day={day}
                 />
-                {day == 0 && cloudCover ? (
+                {cloudCover ? (
                   <AnimatedInfoRow
                     animatedProps={animatedCloudProps as React.RefAttributes<View>}
                     label="Cloud Cover"
@@ -778,7 +758,6 @@ const HomeScreen = () => {
                     textArray={["clear", "cloudy", "overcast"]}
                     imperialUnit="%"
                     metricUnit="%"
-                    day={day}
                   />
                 ) : null}
 

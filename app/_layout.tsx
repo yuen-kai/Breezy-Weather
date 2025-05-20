@@ -9,6 +9,7 @@ import { defaultClothingItems } from "@/types/clothing";
 import * as SplashScreen from "expo-splash-screen";
 import { defaultTimeOfDaySettings, defaultTimeOfDay } from "@/types/timeOfDay";
 import { Tabs, TabList, TabTrigger, TabSlot } from "expo-router/ui";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
 let initial = true;
@@ -89,16 +90,18 @@ const Layout = () => {
   }, []);
 
   return (
-    <PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
-      <StatusBar style={darkMode ? "light" : "dark"} />
-      <Tabs>
-        <TabSlot />
-        <TabList>
-          <TabTrigger href="/" name="Home" />
-          <TabTrigger href="/settings" name="Settings" />
-        </TabList>
-      </Tabs>
-    </PaperProvider>
+    <GestureHandlerRootView>
+      <PaperProvider theme={darkMode ? DarkTheme : LightTheme}>
+        <StatusBar style={darkMode ? "light" : "dark"} />
+        <Tabs>
+          <TabSlot />
+          <TabList>
+            <TabTrigger href="/" name="Home" />
+            <TabTrigger href="/settings" name="Settings" />
+          </TabList>
+        </Tabs>
+      </PaperProvider>
+    </GestureHandlerRootView>
   );
 };
 

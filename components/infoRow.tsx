@@ -2,11 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
 import BoxRow from "@/components/BoxRow";
-import { useAppTheme } from "@/theme";
 import useSettingsStore from "@/store/store";
-import { getAverage } from "@/functions/average";
-import DrasticChangeTooltip from "./DrasticChangeTooltip";
-import { getDrasticChangeMessage, getSortedTimeOfDay } from "@/functions/drasticChange";
 
 interface InfoRowProps {
   label: string;
@@ -15,13 +11,10 @@ interface InfoRowProps {
   textArray: string[];
   imperialUnit: string;
   metricUnit: string;
-  valuesArray?: number[];
   metricConversion?: (value: number) => number;
-  getWeightedAverage?: (values: number[]) => number;
   selectedBox?: number;
   hasZeroValue?: boolean;
   zeroText?: string;
-  day: number;
 }
 
 export function convertToScale(value: number, cutoffs: number[]): number {
@@ -40,17 +33,14 @@ export const InfoRow = React.forwardRef<View, InfoRowProps>(
       textArray,
       imperialUnit,
       metricUnit,
-      valuesArray = [],
       metricConversion,
-      getWeightedAverage = getAverage,
       selectedBox,
       hasZeroValue,
       zeroText,
-      day,
     },
     ref
   ) => {
-    const { unit, timeOfDay, timeOfDaySettings } = useSettingsStore();
+    const { unit } = useSettingsStore();
 
     const selectedIndex = convertToScale(value, cutoffs);
     

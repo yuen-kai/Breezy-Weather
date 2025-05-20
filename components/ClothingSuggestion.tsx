@@ -6,6 +6,8 @@ import { useAppTheme } from "../theme";
 import { ClothingItem } from "@/types/clothing";
 import useSettingsStore from "@/store/store";
 import { VariantProp } from "react-native-paper/lib/typescript/components/Typography/types";
+import ClothingCarousel from "./ClothingCarousel";
+import TextCarousel from "./TextCarousel";
 
 interface ClothingSuggestionProps {
   temperature: number;
@@ -37,13 +39,23 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
     <View style={styles.container}>
       {suggestion ? (
         <>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              variant={textVariant}
-              style={{ width: textWidth, textAlign: "center", padding: 4 }}
-            >
-              Suggested: {suggestion.name}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", width: textWidth }}>
+            {valuesArray.length > 0 ? (
+              <>
+                <Text variant={textVariant} style={{ textAlign: "center", padding: 4 }}>
+                  Suggested:
+                </Text>
+                <TextCarousel
+                  clothingItems={clothingItems}
+                  currentSuggestion={suggestion}
+                  textVariant={textVariant}
+                />
+              </>
+            ) : (
+              <Text variant={textVariant} style={{ textAlign: "center", padding: 4 }}>
+                Suggested: {suggestion.name}
+              </Text>
+            )}
             {hasDrasticChange && (
               <Tooltip title="Weather changes drastically" enterTouchDelay={0}>
                 <Icon source="swap-vertical-bold" color={theme.colors.error} size={25} />
@@ -51,12 +63,23 @@ const ClothingSuggestion: React.FC<ClothingSuggestionProps> = ({
             )}
           </View>
 
-          {suggestion.image && (
-            <Image
-              source={suggestion.image}
-              style={[styles.icon, suggestion.tint && { tintColor: theme.colors.onBackground }]}
-              contentFit="contain"
+          {valuesArray.length > 0 ? (
+            <ClothingCarousel
+              clothingItems={clothingItems}
+              currentSuggestion={suggestion}
+              imageStyle={[
+                styles.icon,
+                suggestion.tint && { tintColor: theme.colors.onBackground },
+              ]}
             />
+          ) : (
+            suggestion.image && (
+              <Image
+                source={suggestion.image}
+                style={[styles.icon, suggestion.tint && { tintColor: theme.colors.onBackground }]}
+                contentFit="contain"
+              />
+            )
           )}
         </>
       ) : (
