@@ -17,8 +17,6 @@ import { router } from "expo-router";
 import useSettingsStore from "../store/store";
 import HourlyWeatherCard from "../components/HourlyWeatherCard";
 import ClothingCarousel from "../components/ClothingCarousel";
-import ClothingHourly from "../components/ClothingHourly";
-import { TimeOfDay } from "@/types/timeOfDay";
 import TimeOfDaySelector from "../components/TimeOfDaySelector";
 import { InfoRow, convertToScale } from "@/components/InfoRow";
 import { TextRow } from "@/components/TextRow";
@@ -183,10 +181,15 @@ const HomeScreen = () => {
 
   async function checkForUpdate() {
     try {
-      const update = await Updates.checkForUpdateAsync();
-      if (update.isAvailable) {
+      const updateCheckPromise = Updates.checkForUpdateAsync();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Update check timed out")), 3000);
+      });
+
+      const update = await Promise.race([updateCheckPromise, timeoutPromise]);
+      if ((update as Updates.UpdateCheckResult).isAvailable) {
         await Updates.fetchUpdateAsync();
-        await Updates.reloadAsync(); //causing problems with initial dark mode setting?
+        await Updates.reloadAsync();
       } else {
         setUpFirstTimeUsingDate();
         SplashScreen.hideAsync();
@@ -585,10 +588,7 @@ const HomeScreen = () => {
               elevation={0}
             >
               {feelsLike !== undefined && (
-                <ClothingCarousel
-                  temperature={feelsLike}
-                  valuesArray={feelsLikeTemps}
-                />
+                <ClothingCarousel temperature={feelsLike} valuesArray={feelsLikeTemps} />
               )}
               <AnimatedInfoRow
                 label="Feels like"
