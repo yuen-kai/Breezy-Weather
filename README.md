@@ -6,10 +6,10 @@ Other weather apps show you the numbers. Breezy tells you what they mean with si
 
 - **Outfit suggestions** — Always be prepared
 - **Clear Words, Not Just Numbers** – No decoding needed
-- **Visual weather scale** – easily visualize and track weather changes
-- **Quick Navigation** – Check weather by time of day with a tap
-- **Customizable** – Add your own outfits and customize the visual scale cutoffs.
-- **Focused Design** – No ads, no unnecessary charts—just the essentials.
+- **Visual Weather Scale** – Easily visualize and track weather changes
+- **Plan Smarter** –  See weather by time of day, so you only view what matters
+- **Customizable** – Add your own outfits and customize the visual scale cutoffs
+- **Focused Design** – No ads, no unnecessary charts—just the essentials
 - **Completely Free**
 
-Mobile app coming out soon
+iOS download: https://apps.apple.com/us/app/breezy-weather-simplified/id6744468599?platform=iphone
