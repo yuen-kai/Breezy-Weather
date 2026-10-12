@@ -14,6 +14,6 @@ Other weather apps show you the numbers. Breezy tells you what they mean with si
 
 iOS download: https://apps.apple.com/us/app/breezy-weather-simplified/id6744468599?platform=iphone (expired developer account rn)
 
-<img width="1290" height="2796" alt="image" src="https://github.com/user-attachments/assets/81050107-7abc-4cb2-96f3-bb6f646f6aa3" />
-<img width="1290" height="2796" alt="image" src="https://github.com/user-attachments/assets/3177f1e8-35a5-4b18-8a7f-f4eedc9108ff" />
-<img width="1290" height="2796" alt="image" src="https://github.com/user-attachments/assets/97413155-4db2-4c3b-b115-05d4bbdff145" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/81050107-7abc-4cb2-96f3-bb6f646f6aa3" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/3177f1e8-35a5-4b18-8a7f-f4eedc9108ff" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/97413155-4db2-4c3b-b115-05d4bbdff145" />
